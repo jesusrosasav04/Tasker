@@ -8,41 +8,34 @@ const getAll = async (req, res) => {
 
     let query = `
       SELECT
-        t.TrabajadorID,
-        t.biografia,
-        t.estadoVerificado,
-        t.estadoOnline,
+        t.id AS trabajador_id,
+        t.descripcion,
+        t.verificado,
+        u.id AS usuario_id,
         u.nombre,
-        u.apellidoP,
-        u.FotoPerfilURL,
         u.telefono,
-        GROUP_CONCAT(c.nombre SEPARATOR ', ') AS categorias,
-        ROUND(AVG(cal.Puntuacion), 1)          AS calificacion,
-        COUNT(DISTINCT cal.CalificacionID)      AS total_resenas,
-        COUNT(DISTINCT ta.TareaID)              AS total_trabajos
+        t.calificacion_promedio,
+        GROUP_CONCAT(DISTINCT c.nombre SEPARATOR ', ') AS categorias
       FROM trabajador t
-      JOIN usuarios u ON t.UsuarioID = u.UsuarioID
-      LEFT JOIN trabajador_categorias tc ON t.TrabajadorID = tc.TrabajadorID
-      LEFT JOIN categorias c             ON tc.CategoriaID = c.CategoriaID
-      LEFT JOIN tareas ta                ON t.TrabajadorID = ta.TrabajadorID
-                                         AND ta.Estado = 'completada'
-      LEFT JOIN calificaciones cal       ON u.UsuarioID = cal.CalificadoID
-      WHERE u.estado = 1 AND t.estadoVerificado = 1
+      JOIN usuarios u ON t.usuario_id = u.id
+      LEFT JOIN trabajador_categorias tc ON t.id = tc.trabajador_id
+      LEFT JOIN categorias c ON tc.categoria_id = c.id
+      WHERE u.estado = 1 AND t.verificado = 1
     `;
 
     const params = [];
 
     if (nombre) {
-      query += ` AND (u.nombre LIKE ? OR u.apellidoP LIKE ?)`;
-      params.push(`%${nombre}%`, `%${nombre}%`);
+      query += ` AND u.nombre LIKE ?`;
+      params.push(`%${nombre}%`);
     }
 
     if (categoria) {
-      query += ` AND c.CategoriaID = ?`;
+      query += ` AND c.id = ?`;
       params.push(categoria);
     }
 
-    query += ` GROUP BY t.TrabajadorID ORDER BY calificacion DESC`;
+    query += ` GROUP BY t.id ORDER BY t.calificacion_promedio DESC`;
 
     const [trabajadores] = await db.query(query, params);
     return success(res, trabajadores);
@@ -58,53 +51,40 @@ const getById = async (req, res) => {
     const { id } = req.params;
 
     const [rows] = await db.query(
-      `
-      SELECT
-        t.TrabajadorID,
-        t.biografia,
-        t.estadoVerificado,
-        t.estadoOnline,
-        u.UsuarioID,
+      `SELECT
+        t.id AS trabajador_id,
+        t.descripcion,
+        t.verificado,
+        t.calificacion_promedio,
+        u.id AS usuario_id,
         u.nombre,
-        u.apellidoP,
-        u.apellidoM,
-        u.FotoPerfilURL,
+        u.email,
         u.telefono,
-        u.FechaRegistro,
-        GROUP_CONCAT(DISTINCT c.nombre SEPARATOR ', ') AS categorias,
-        ROUND(AVG(cal.Puntuacion), 1)                  AS calificacion,
-        COUNT(DISTINCT cal.CalificacionID)              AS total_resenas,
-        COUNT(DISTINCT ta.TareaID)                      AS total_trabajos
+        u.created_at,
+        GROUP_CONCAT(DISTINCT c.nombre SEPARATOR ', ') AS categorias
       FROM trabajador t
-      JOIN usuarios u ON t.UsuarioID = u.UsuarioID
-      LEFT JOIN trabajador_categorias tc ON t.TrabajadorID = tc.TrabajadorID
-      LEFT JOIN categorias c             ON tc.CategoriaID = c.CategoriaID
-      LEFT JOIN tareas ta                ON t.TrabajadorID = ta.TrabajadorID
-                                         AND ta.Estado = 'completada'
-      LEFT JOIN calificaciones cal       ON u.UsuarioID = cal.CalificadoID
-      WHERE t.TrabajadorID = ? AND u.estado = 1
-      GROUP BY t.TrabajadorID
-    `,
+      JOIN usuarios u ON t.usuario_id = u.id
+      LEFT JOIN trabajador_categorias tc ON t.id = tc.trabajador_id
+      LEFT JOIN categorias c ON tc.categoria_id = c.id
+      WHERE t.id = ? AND u.estado = 1
+      GROUP BY t.id`,
       [id],
     );
 
     if (rows.length === 0) return error(res, "Trabajador no encontrado", 404);
 
-    // Reseñas recientes
     const [resenas] = await db.query(
-      `
-      SELECT
-        cal.Puntuacion,
-        cal.Comentario,
-        cal.FechaCreacion,
+      `SELECT
+        cal.puntuacion,
+        cal.comentario,
+        cal.created_at,
         u.nombre AS cliente_nombre
       FROM calificaciones cal
-      JOIN usuarios u ON cal.CalificadorID = u.UsuarioID
-      WHERE cal.CalificadoID = ?
-      ORDER BY cal.FechaCreacion DESC
-      LIMIT 5
-    `,
-      [rows[0].UsuarioID],
+      JOIN usuarios u ON cal.cliente_id = u.id
+      WHERE cal.trabajador_id = ?
+      ORDER BY cal.created_at DESC
+      LIMIT 5`,
+      [rows[0].usuario_id],
     );
 
     return success(res, { ...rows[0], resenas });
