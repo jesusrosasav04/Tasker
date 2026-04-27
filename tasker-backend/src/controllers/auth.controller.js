@@ -1,12 +1,11 @@
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const db = require("../config/db");
 const { success, error } = require("../utils/response");
 
 const generarToken = (usuario) => {
   return jwt.sign(
     {
-      id: usuario.UsuarioID,
+      id: usuario.id,
       email: usuario.email,
       role: usuario.role_nombre,
     },
@@ -15,67 +14,52 @@ const generarToken = (usuario) => {
   );
 };
 
-// ── POST /api/auth/register ─────────────────────────
+// POST /api/auth/register
 const register = async (req, res) => {
-  const { nombre, apellidoP, apellidoM, email, password, telefono, role } =
-    req.body;
+  const { nombre, email, password, telefono, role } = req.body;
 
   if (!nombre || !email || !password || !role) {
-    return error(res, "nombre, email, password y role son requeridos");
+    return error(res, "nombre, email, password y role son requeridos", 400);
   }
 
   const rolesValidos = ["cliente", "trabajador"];
   if (!rolesValidos.includes(role)) {
-    return error(res, "Role inválido. Usa: cliente o trabajador");
+    return error(res, "Role inválido. Usa: cliente o trabajador", 400);
   }
 
   try {
-    // Verificar si el email ya existe
-    const [existe] = await db.query(
-      "SELECT UsuarioID FROM usuarios WHERE email = ?",
-      [email],
-    );
-    if (existe.length > 0) return error(res, "El email ya está registrado");
+    const [existe] = await db.query("SELECT id FROM usuarios WHERE email = ?", [
+      email,
+    ]);
+    if (existe.length > 0)
+      return error(res, "El email ya está registrado", 409);
 
-    // Obtener role_id
     const [roles] = await db.query("SELECT id FROM roles WHERE nombre = ?", [
       role,
     ]);
-    if (roles.length === 0) return error(res, "Role no encontrado");
+    if (roles.length === 0) return error(res, "Role no encontrado", 400);
 
-    // Hashear password
-    const hash = await bcrypt.hash(password, 12);
+    const hash = await bcrypt.hash(password, 10);
 
-    // Insertar usuario
     const [result] = await db.query(
-      `INSERT INTO usuarios (nombre, apellidoP, apellidoM, email, password_hash, telefono, role_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        nombre,
-        apellidoP || null,
-        apellidoM || null,
-        email,
-        hash,
-        telefono || null,
-        roles[0].id,
-      ],
+      `INSERT INTO usuarios (nombre, email, password, telefono, role_id)
+       VALUES (?, ?, ?, ?, ?)`,
+      [nombre, email, hash, telefono || null, roles[0].id],
     );
 
     const usuarioID = result.insertId;
 
-    // Si es trabajador, crear registro en tabla trabajador
     if (role === "trabajador") {
-      await db.query("INSERT INTO trabajador (UsuarioID) VALUES (?)", [
+      await db.query("INSERT INTO trabajador (usuario_id) VALUES (?)", [
         usuarioID,
       ]);
     }
 
-    // Obtener usuario completo para el token
     const [usuario] = await db.query(
-      `SELECT u.UsuarioID, u.email, r.nombre AS role_nombre
+      `SELECT u.id, u.email, r.nombre AS role_nombre
        FROM usuarios u
        JOIN roles r ON u.role_id = r.id
-       WHERE u.UsuarioID = ?`,
+       WHERE u.id = ?`,
       [usuarioID],
     );
 
@@ -84,15 +68,10 @@ const register = async (req, res) => {
     return success(
       res,
       {
-        mensaje: "Usuario registrado exitosamente",
         token,
-        usuario: {
-          id: usuarioID,
-          nombre,
-          email,
-          role,
-        },
+        usuario: { id: usuarioID, nombre, email, role },
       },
+      "Usuario registrado exitosamente",
       201,
     );
   } catch (err) {
@@ -101,12 +80,12 @@ const register = async (req, res) => {
   }
 };
 
-// ── POST /api/auth/login ────────────────────────────
+// POST /api/auth/login
 const login = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return error(res, "Email y password son requeridos");
+    return error(res, "Email y password son requeridos", 400);
   }
 
   try {
@@ -124,10 +103,7 @@ const login = async (req, res) => {
 
     const usuario = usuarios[0];
 
-    const passwordValido = await bcrypt.compare(
-      password,
-      usuario.password_hash,
-    );
+    const passwordValido = await bcrypt.compare(password, usuario.password);
     if (!passwordValido) return error(res, "Credenciales incorrectas", 401);
 
     const token = generarToken(usuario);
@@ -135,11 +111,10 @@ const login = async (req, res) => {
     return success(res, {
       token,
       usuario: {
-        id: usuario.UsuarioID,
+        id: usuario.id,
         nombre: usuario.nombre,
         email: usuario.email,
         role: usuario.role_nombre,
-        FotoPerfilURL: usuario.FotoPerfilURL,
       },
     });
   } catch (err) {
@@ -148,16 +123,15 @@ const login = async (req, res) => {
   }
 };
 
-// ── GET /api/auth/me ────────────────────────────────
+// GET /api/auth/me
 const me = async (req, res) => {
   try {
     const [usuarios] = await db.query(
-      `SELECT u.UsuarioID, u.nombre, u.apellidoP, u.apellidoM,
-              u.email, u.telefono, u.FotoPerfilURL, u.FechaRegistro,
+      `SELECT u.id, u.nombre, u.email, u.telefono, u.created_at,
               r.nombre AS role
        FROM usuarios u
        JOIN roles r ON u.role_id = r.id
-       WHERE u.UsuarioID = ? AND u.estado = 1`,
+       WHERE u.id = ? AND u.estado = 1`,
       [req.user.id],
     );
 
@@ -169,5 +143,22 @@ const me = async (req, res) => {
     return error(res, "Error interno del servidor", 500);
   }
 };
+const jwt = require("jsonwebtoken");
 
-module.exports = { register, login, me };
+const googleCallback = (req, res) => {
+  // req.user viene de passport después de autenticarse
+  const user = req.user;
+
+  const token = jwt.sign(
+    { id: user.id, role_id: user.role_id },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN },
+  );
+
+  // Redirige al frontend con el token en la URL
+  // El frontend lo captura y lo guarda en localStorage
+  res.redirect(
+    `${process.env.FRONTEND_URL}/auth/google/success?token=${token}`,
+  );
+};
+module.exports = { register, login, me, googleCallback };
