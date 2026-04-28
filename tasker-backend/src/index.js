@@ -2,16 +2,14 @@ require("dotenv").config();
 const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
-const xss = require("xss-clean");
 const hpp = require("hpp");
 const passport = require("passport");
-require("./config/passport"); // carga la estrategia Google
+require("./config/passport");
 const { apiLimiter } = require("./middlewares/rateLimiter.middleware");
 
 const app = express();
 
 app.use(helmet());
-app.use(xss());
 app.use(hpp());
 app.use(passport.initialize());
 
@@ -35,12 +33,12 @@ app.use(
 app.use(express.json({ limit: "10kb" }));
 app.use("/api", apiLimiter);
 
-// ─── Rutas ─────────────────────────────────────────────────
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/categorias", require("./routes/categoria.routes"));
 app.use("/api/trabajadores", require("./routes/trabajador.routes"));
 app.use("/api/tareas", require("./routes/tarea.routes"));
 app.use("/api/postulaciones", require("./routes/postulacion.routes"));
+app.use("/api/admin", require("./routes/admin.routes"));
 
 app.use((err, req, res, next) => {
   if (err.message?.includes("CORS")) {

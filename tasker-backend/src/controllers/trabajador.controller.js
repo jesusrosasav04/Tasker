@@ -94,4 +94,101 @@ const getById = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById };
+// PUT /api/trabajadores/perfil 🔒 (solo trabajador)
+const actualizarPerfil = async (req, res) => {
+  const usuario_id = req.user.id;
+  const { descripcion, telefono } = req.body;
+
+  try {
+    await db.query(
+      `UPDATE trabajador SET descripcion = ? WHERE usuario_id = ?`,
+      [descripcion || null, usuario_id],
+    );
+
+    if (telefono) {
+      await db.query(`UPDATE usuarios SET telefono = ? WHERE id = ?`, [
+        telefono,
+        usuario_id,
+      ]);
+    }
+
+    return success(res, null, "Perfil actualizado correctamente", 200);
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al actualizar perfil", 500);
+  }
+};
+
+// GET /api/trabajadores/mis-tareas 🔒 (solo trabajador)
+const misTareas = async (req, res) => {
+  const usuario_id = req.user.id;
+
+  try {
+    const [trabajador] = await db.query(
+      `SELECT id FROM trabajador WHERE usuario_id = ?`,
+      [usuario_id],
+    );
+
+    if (trabajador.length === 0)
+      return error(res, "Trabajador no encontrado", 404);
+
+    const trabajador_id = trabajador[0].id;
+
+    const [tareas] = await db.query(
+      `SELECT
+        t.id, t.titulo, t.descripcion, t.presupuesto,
+        t.ubicacion, t.latitud, t.longitud,
+        t.estado, t.created_at,
+        c.nombre AS categoria,
+        u.nombre AS cliente_nombre,
+        p.precio_propuesto
+       FROM tareas t
+       JOIN categorias c ON t.categoria_id = c.id
+       JOIN usuarios u ON t.cliente_id = u.id
+       JOIN postulaciones p ON p.tarea_id = t.id
+       WHERE p.trabajador_id = ? AND p.estado = 'aceptada'
+       ORDER BY t.created_at DESC`,
+      [trabajador_id],
+    );
+
+    return success(res, tareas);
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al obtener tareas", 500);
+  }
+};
+
+// GET /api/trabajadores/mis-calificaciones 🔒 (solo trabajador)
+const misCalificaciones = async (req, res) => {
+  const usuario_id = req.user.id;
+
+  try {
+    const [calificaciones] = await db.query(
+      `SELECT
+        cal.puntuacion,
+        cal.comentario,
+        cal.created_at,
+        u.nombre AS cliente_nombre,
+        t.titulo AS tarea
+       FROM calificaciones cal
+       JOIN usuarios u ON cal.cliente_id = u.id
+       JOIN tareas t ON cal.tarea_id = t.id
+       WHERE cal.trabajador_id = ?
+       ORDER BY cal.created_at DESC`,
+      [usuario_id],
+    );
+
+    return success(res, calificaciones);
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al obtener calificaciones", 500);
+  }
+};
+
+module.exports = {
+  getAll,
+  getById,
+  actualizarPerfil,
+  misTareas,
+  misCalificaciones,
+};
