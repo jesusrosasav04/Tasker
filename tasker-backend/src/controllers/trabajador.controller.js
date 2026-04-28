@@ -112,7 +112,7 @@ const actualizarPerfil = async (req, res) => {
       ]);
     }
 
-    return success(res, { message: "Perfil actualizado correctamente" });
+    return success(res, null, "Perfil actualizado correctamente", 200);
   } catch (err) {
     console.error(err);
     return error(res, "Error al actualizar perfil", 500);
