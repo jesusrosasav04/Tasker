@@ -6,11 +6,19 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import GoogleSuccess from "./pages/GoogleSuccess";
 import Proveedores from "./pages/Proveedores";
 import PerfilTrabajador from "./pages/PerfilTrabajador";
 import PublicarSolicitud from "./pages/PublicarSolicitud";
 import DashboardCliente from "./pages/DashboardCliente";
 import DashboardTrabajador from "./pages/DashboardTrabajador";
+import NuevaTarea from "./pages/NuevaTarea";
+import PostulacionesTarea from "./pages/PostulacionesTarea";
+import EditarPerfilTrabajador from "./pages/EditarPerfilTrabajador";
+import Admin from "./pages/admin/Admin";
+import AdminUsuarios from "./pages/admin/AdminUsuarios";
+import AdminTrabajadores from "./pages/admin/AdminTrabajadores";
+import AdminTareas from "./pages/admin/AdminTareas";
 
 function App() {
   return (
@@ -24,6 +32,7 @@ function App() {
         <Route path="/publicar" element={<PublicarSolicitud />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/auth/google/success" element={<GoogleSuccess />} />
 
         {/* Protegidas */}
         <Route
@@ -35,10 +44,66 @@ function App() {
           }
         />
         <Route
+          path="/dashboard/cliente/tareas/nueva"
+          element={
+            <ProtectedRoute roles={["cliente"]}>
+              <NuevaTarea />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/cliente/tareas/:id"
+          element={
+            <ProtectedRoute roles={["cliente"]}>
+              <PostulacionesTarea />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard/trabajador"
           element={
             <ProtectedRoute roles={["trabajador"]}>
               <DashboardTrabajador />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/trabajador/perfil"
+          element={
+            <ProtectedRoute roles={["trabajador"]}>
+              <EditarPerfilTrabajador />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/usuarios"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminUsuarios />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/trabajadores"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminTrabajadores />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/tareas"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminTareas />
             </ProtectedRoute>
           }
         />
