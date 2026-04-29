@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { BarChart2, Users, Briefcase, ClipboardList, LogOut, Wrench } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 const NAV = [
   { to: "/admin", label: "Estadísticas", icon: BarChart2, end: true },
