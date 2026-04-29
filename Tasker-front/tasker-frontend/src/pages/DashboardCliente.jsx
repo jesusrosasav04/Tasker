@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, ClipboardList, Star, MessageSquare } from "lucide-react";
+import { Plus, ClipboardList, Clock, CheckCircle, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
@@ -25,31 +25,36 @@ export default function DashboardCliente() {
     },
     {
       label: "En progreso",
-      value: tareas.filter((t) => t.Estado === "en_progreso").length,
-      icon: Star,
+      value: tareas.filter((t) => t.estado === "en_progreso").length,
+      icon: Clock,
       color: "bg-amber-50 text-amber-600",
     },
     {
       label: "Completadas",
-      value: tareas.filter((t) => t.Estado === "completada").length,
-      icon: Star,
+      value: tareas.filter((t) => t.estado === "completada").length,
+      icon: CheckCircle,
       color: "bg-green-50 text-green-600",
     },
     {
-      label: "Mensajes",
-      value: 0,
-      icon: MessageSquare,
+      label: "Pendientes",
+      value: tareas.filter((t) => t.estado === "pendiente").length,
+      icon: Users,
       color: "bg-purple-50 text-purple-600",
     },
   ];
 
   const estadoColor = {
     pendiente: "bg-gray-100 text-gray-600",
-    publicada: "bg-blue-100 text-blue-600",
-    aceptada: "bg-indigo-100 text-indigo-600",
-    en_progreso: "bg-amber-100 text-amber-600",
-    completada: "bg-green-100 text-green-600",
+    en_progreso: "bg-amber-100 text-amber-700",
+    completada: "bg-green-100 text-green-700",
     cancelada: "bg-red-100 text-red-600",
+  };
+
+  const estadoLabel = {
+    pendiente: "Pendiente",
+    en_progreso: "En progreso",
+    completada: "Completada",
+    cancelada: "Cancelada",
   };
 
   return (
@@ -66,12 +71,12 @@ export default function DashboardCliente() {
             </p>
           </div>
           <Link
-            to="/publicar"
+            to="/dashboard/cliente/tareas/nueva"
             style={{ backgroundColor: "#10b981" }}
             className="flex items-center gap-2 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition"
           >
             <Plus className="h-4 w-4" />
-            Nueva solicitud
+            Nueva tarea
           </Link>
         </div>
 
@@ -97,10 +102,11 @@ export default function DashboardCliente() {
         {/* Mis tareas */}
         <div className="bg-white rounded-2xl border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Mis solicitudes</h2>
+            <h2 className="font-semibold text-gray-900">Mis tareas</h2>
             <Link
-              to="/publicar"
-              className="text-sm text-primary font-medium hover:underline"
+              to="/dashboard/cliente/tareas/nueva"
+              className="text-sm font-medium hover:underline"
+              style={{ color: "#10b981" }}
             >
               + Nueva
             </Link>
@@ -108,44 +114,51 @@ export default function DashboardCliente() {
 
           {loading ? (
             <div className="flex justify-center py-16">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#10b981", borderTopColor: "transparent" }} />
             </div>
           ) : tareas.length === 0 ? (
             <div className="text-center py-16">
               <ClipboardList className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">
-                No tienes solicitudes aún
-              </p>
+              <p className="text-gray-500 font-medium">No tienes tareas aún</p>
               <p className="text-gray-400 text-sm mt-1">
                 Crea tu primera solicitud de servicio
               </p>
               <Link
-                to="/publicar"
+                to="/dashboard/cliente/tareas/nueva"
                 style={{ backgroundColor: "#10b981" }}
                 className="inline-block mt-4 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition"
               >
-                Crear solicitud
+                Crear tarea
               </Link>
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
               {tareas.map((t) => (
                 <div
-                  key={t.TareaID}
+                  key={t.id}
                   className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition"
                 >
-                  <div>
-                    <p className="font-medium text-gray-900">{t.Titulo}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-gray-900 truncate">{t.titulo}</p>
                     <p className="text-sm text-gray-500 mt-0.5">
-                      {t.categoria_nombre || "Sin categoría"} ·{" "}
-                      {new Date(t.FechaCreacion).toLocaleDateString("es-MX")}
+                      {t.categoria || "Sin categoría"} ·{" "}
+                      {new Date(t.created_at).toLocaleDateString("es-MX")}
                     </p>
                   </div>
-                  <span
-                    className={`text-xs font-medium px-3 py-1 rounded-full ${estadoColor[t.Estado] || "bg-gray-100 text-gray-600"}`}
-                  >
-                    {t.Estado?.replace("_", " ")}
-                  </span>
+                  <div className="flex items-center gap-3 ml-4 flex-shrink-0">
+                    <span
+                      className={`text-xs font-medium px-3 py-1 rounded-full ${estadoColor[t.estado] || "bg-gray-100 text-gray-600"}`}
+                    >
+                      {estadoLabel[t.estado] || t.estado}
+                    </span>
+                    <Link
+                      to={`/dashboard/cliente/tareas/${t.id}`}
+                      className="text-xs font-medium text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition"
+                      style={{ backgroundColor: "#10b981" }}
+                    >
+                      Ver postulaciones
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
