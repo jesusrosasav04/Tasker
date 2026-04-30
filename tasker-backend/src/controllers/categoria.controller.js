@@ -5,7 +5,7 @@ const { success, error } = require("../utils/response");
 const getAll = async (req, res) => {
   try {
     const [categorias] = await db.query(
-      "SELECT id, nombre, descripcion FROM categorias WHERE activo = 1 ORDER BY nombre"
+      "SELECT id, nombre FROM categorias WHERE activo = 1 ORDER BY nombre"
     );
     return success(res, categorias);
   } catch (err) {
@@ -19,7 +19,7 @@ const getAllAdmin = async (req, res) => {
   try {
     const [categorias] = await db.query(
       `SELECT
-        id, nombre, descripcion, activo, created_at,
+        id, nombre, activo, created_at,
         (SELECT COUNT(*) FROM tareas WHERE categoria_id = categorias.id) AS total_tareas
        FROM categorias
        ORDER BY nombre`
@@ -33,10 +33,9 @@ const getAllAdmin = async (req, res) => {
 
 // POST /api/admin/categorias
 const crear = async (req, res) => {
-  const { nombre, descripcion } = req.body;
+  const { nombre } = req.body;
 
   try {
-    // Verificar que no exista una categoría con el mismo nombre
     const [existe] = await db.query(
       "SELECT id FROM categorias WHERE LOWER(nombre) = LOWER(?)",
       [nombre.trim()]
@@ -46,8 +45,8 @@ const crear = async (req, res) => {
       return error(res, "Ya existe una categoría con ese nombre", 409);
 
     const [result] = await db.query(
-      "INSERT INTO categorias (nombre, descripcion, activo) VALUES (?, ?, 1)",
-      [nombre.trim(), descripcion?.trim() || null]
+      "INSERT INTO categorias (nombre, activo) VALUES (?, 1)",
+      [nombre.trim()]
     );
 
     const [nueva] = await db.query(
@@ -65,7 +64,7 @@ const crear = async (req, res) => {
 // PUT /api/admin/categorias/:id
 const actualizar = async (req, res) => {
   const { id } = req.params;
-  const { nombre, descripcion } = req.body;
+  const { nombre } = req.body;
 
   try {
     const [existe] = await db.query(
@@ -76,7 +75,6 @@ const actualizar = async (req, res) => {
     if (existe.length === 0)
       return error(res, "Categoría no encontrada", 404);
 
-    // Verificar nombre duplicado en otra categoría
     if (nombre) {
       const [duplicado] = await db.query(
         "SELECT id FROM categorias WHERE LOWER(nombre) = LOWER(?) AND id != ?",
@@ -87,11 +85,8 @@ const actualizar = async (req, res) => {
     }
 
     await db.query(
-      `UPDATE categorias SET
-        nombre = COALESCE(?, nombre),
-        descripcion = COALESCE(?, descripcion)
-       WHERE id = ?`,
-      [nombre?.trim() || null, descripcion?.trim() || null, id]
+      "UPDATE categorias SET nombre = COALESCE(?, nombre) WHERE id = ?",
+      [nombre?.trim() || null, id]
     );
 
     const [actualizada] = await db.query(
@@ -119,7 +114,6 @@ const toggleEstado = async (req, res) => {
     if (categoria.length === 0)
       return error(res, "Categoría no encontrada", 404);
 
-    // Si se va a desactivar, verificar que no tenga tareas activas
     if (categoria[0].activo === 1) {
       const [[{ total }]] = await db.query(
         "SELECT COUNT(*) AS total FROM tareas WHERE categoria_id = ? AND estado NOT IN ('completada', 'cancelada')",
@@ -134,13 +128,9 @@ const toggleEstado = async (req, res) => {
     }
 
     const nuevoEstado = categoria[0].activo === 1 ? 0 : 1;
-    await db.query("UPDATE categorias SET activo = ? WHERE id = ?", [
-      nuevoEstado,
-      id,
-    ]);
+    await db.query("UPDATE categorias SET activo = ? WHERE id = ?", [nuevoEstado, id]);
 
-    const mensaje =
-      nuevoEstado === 1 ? "Categoría activada" : "Categoría desactivada";
+    const mensaje = nuevoEstado === 1 ? "Categoría activada" : "Categoría desactivada";
     return success(res, { activo: nuevoEstado }, mensaje);
   } catch (err) {
     console.error(err);
@@ -161,7 +151,6 @@ const eliminar = async (req, res) => {
     if (categoria.length === 0)
       return error(res, "Categoría no encontrada", 404);
 
-    // No permitir eliminar si tiene tareas asociadas
     const [[{ total }]] = await db.query(
       "SELECT COUNT(*) AS total FROM tareas WHERE categoria_id = ?",
       [id]
@@ -175,7 +164,6 @@ const eliminar = async (req, res) => {
       );
 
     await db.query("DELETE FROM categorias WHERE id = ?", [id]);
-
     return success(res, null, "Categoría eliminada correctamente");
   } catch (err) {
     console.error(err);

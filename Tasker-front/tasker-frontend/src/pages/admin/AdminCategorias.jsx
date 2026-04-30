@@ -18,7 +18,6 @@ function ModalCategoria({ categoria, onClose, onGuardado }) {
   const esEdicion = !!categoria;
   const [form, setForm] = useState({
     nombre: categoria?.nombre || "",
-    descripcion: categoria?.descripcion || "",
   });
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
@@ -73,24 +72,6 @@ function ModalCategoria({ categoria, onClose, onGuardado }) {
               placeholder="Ej: Plomería, Electricidad..."
               className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
             />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1.5">
-              Descripción{" "}
-              <span className="text-gray-400 font-normal">(opcional)</span>
-            </label>
-            <textarea
-              rows={3}
-              value={form.descripcion}
-              onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-              maxLength={255}
-              placeholder="Describe brevemente esta categoría..."
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-none"
-            />
-            <p className="text-xs text-gray-400 mt-1 text-right">
-              {form.descripcion.length}/255
-            </p>
           </div>
 
           {errMsg && (
@@ -299,9 +280,8 @@ export default function AdminCategorias() {
 
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           {/* Cabecera tabla */}
-          <div className="hidden sm:grid grid-cols-[1fr_2fr_80px_80px_100px] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <div className="hidden sm:grid grid-cols-[1fr_80px_80px_100px] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <span>Nombre</span>
-            <span>Descripción</span>
             <span className="text-center">Tareas</span>
             <span className="text-center">Estado</span>
             <span className="text-right">Acciones</span>
@@ -330,7 +310,7 @@ export default function AdminCategorias() {
               {categorias.map((cat) => (
                 <div
                   key={cat.id}
-                  className={`grid grid-cols-1 sm:grid-cols-[1fr_2fr_80px_80px_100px] gap-2 sm:gap-4 px-6 py-4 items-center hover:bg-gray-50 transition ${
+                  className={`grid grid-cols-1 sm:grid-cols-[1fr_80px_80px_100px] gap-2 sm:gap-4 px-6 py-4 items-center hover:bg-gray-50 transition ${
                     cat.activo === 0 ? "opacity-50" : ""
                   }`}
                 >
@@ -343,13 +323,6 @@ export default function AdminCategorias() {
                       {cat.nombre}
                     </span>
                   </div>
-
-                  {/* Descripción */}
-                  <p className="hidden sm:block text-sm text-gray-500 truncate">
-                    {cat.descripcion || (
-                      <span className="italic text-gray-300">Sin descripción</span>
-                    )}
-                  </p>
 
                   {/* Total tareas */}
                   <div className="hidden sm:flex justify-center">
