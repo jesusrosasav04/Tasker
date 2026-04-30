@@ -19,6 +19,7 @@ import Admin from "./pages/admin/Admin";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminTrabajadores from "./pages/admin/AdminTrabajadores";
 import AdminTareas from "./pages/admin/AdminTareas";
+import AdminCategorias from "./pages/admin/AdminCategorias";
 
 function App() {
   return (
@@ -104,6 +105,14 @@ function App() {
           element={
             <ProtectedRoute roles={["admin"]}>
               <AdminTareas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/categorias"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminCategorias />
             </ProtectedRoute>
           }
         />

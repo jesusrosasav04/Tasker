@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { BarChart2, Users, Briefcase, ClipboardList, LogOut, Wrench } from "lucide-react";
+import { BarChart2, Users, Briefcase, ClipboardList, Tag, LogOut, Wrench } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 const NAV = [
@@ -7,6 +7,7 @@ const NAV = [
   { to: "/admin/usuarios", label: "Usuarios", icon: Users },
   { to: "/admin/trabajadores", label: "Trabajadores", icon: Briefcase },
   { to: "/admin/tareas", label: "Tareas", icon: ClipboardList },
+  { to: "/admin/categorias", label: "Categorías", icon: Tag },
 ];
 
 export default function AdminLayout({ children }) {
