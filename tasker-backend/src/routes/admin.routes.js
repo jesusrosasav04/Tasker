@@ -7,6 +7,9 @@ const {
   getTareas,
   getEstadisticas,
   getUsuarioDetalle,
+  getTareaDetalle,
+  eliminarTarea,
+  cambiarEstadoTarea,
 } = require("../controllers/admin.controller");
 const {
   getAllAdmin,
@@ -73,8 +76,17 @@ router.patch(
   verificarTrabajador
 );
 
+const estadoTareaRules = [
+  body("estado")
+    .isIn(["pendiente", "en_progreso", "completada", "cancelada"])
+    .withMessage("Estado inválido"),
+];
+
 // ── Tareas ────────────────────────────────────────────
 router.get("/tareas", getTareas);
+router.get("/tareas/:id", idParamRule, validate, getTareaDetalle);
+router.patch("/tareas/:id/estado", idParamRule, estadoTareaRules, validate, cambiarEstadoTarea);
+router.delete("/tareas/:id", idParamRule, validate, eliminarTarea);
 
 // ── Estadísticas ──────────────────────────────────────
 router.get("/estadisticas", getEstadisticas);
