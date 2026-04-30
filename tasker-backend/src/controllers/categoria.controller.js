@@ -19,7 +19,7 @@ const getAllAdmin = async (req, res) => {
   try {
     const [categorias] = await db.query(
       `SELECT
-        id, nombre, activo, created_at,
+        id, nombre, activo,
         (SELECT COUNT(*) FROM tareas WHERE categoria_id = categorias.id) AS total_tareas
        FROM categorias
        ORDER BY nombre`
