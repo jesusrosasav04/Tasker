@@ -224,10 +224,123 @@ const getEstadisticas = async (req, res) => {
 };
 
 module.exports = {
+  getUsuarioDetalle,
   getUsuarios,
   toggleEstadoUsuario,
   getTrabajadoresPendientes,
   verificarTrabajador,
   getTareas,
   getEstadisticas,
+};
+
+// GET /api/admin/usuarios/:id
+const getUsuarioDetalle = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Info base del usuario
+    const [usuarios] = await db.query(
+      `SELECT
+        u.id, u.nombre, u.email, u.telefono,
+        u.estado, u.created_at, u.google_id,
+        r.nombre AS role
+       FROM usuarios u
+       JOIN roles r ON u.role_id = r.id
+       WHERE u.id = ?`,
+      [id]
+    );
+
+    if (usuarios.length === 0)
+      return error(res, "Usuario no encontrado", 404);
+
+    const usuario = usuarios[0];
+
+    // Si es trabajador, traer datos del perfil
+    let perfilTrabajador = null;
+    if (usuario.role === "trabajador") {
+      const [trabajador] = await db.query(
+        `SELECT
+          t.id AS trabajador_id,
+          t.descripcion,
+          t.verificado,
+          t.calificacion_promedio,
+          GROUP_CONCAT(DISTINCT c.nombre SEPARATOR ', ') AS categorias
+         FROM trabajador t
+         LEFT JOIN trabajador_categorias tc ON t.id = tc.trabajador_id
+         LEFT JOIN categorias c ON tc.categoria_id = c.id
+         WHERE t.usuario_id = ?
+         GROUP BY t.id`,
+        [id]
+      );
+      perfilTrabajador = trabajador[0] || null;
+    }
+
+    // Historial de tareas (como cliente)
+    const [tareasCliente] = await db.query(
+      `SELECT
+        t.id, t.titulo, t.estado, t.created_at,
+        c.nombre AS categoria
+       FROM tareas t
+       JOIN categorias c ON t.categoria_id = c.id
+       WHERE t.cliente_id = ?
+       ORDER BY t.created_at DESC
+       LIMIT 10`,
+      [id]
+    );
+
+    // Historial de postulaciones (como trabajador)
+    let postulaciones = [];
+    if (usuario.role === "trabajador") {
+      const [trab] = await db.query(
+        "SELECT id FROM trabajador WHERE usuario_id = ?", [id]
+      );
+      if (trab.length > 0) {
+        const [posts] = await db.query(
+          `SELECT
+            p.id, p.estado AS postulacion_estado,
+            p.precio_propuesto, p.created_at,
+            t.titulo, t.estado AS tarea_estado
+           FROM postulaciones p
+           JOIN tareas t ON p.tarea_id = t.id
+           WHERE p.trabajador_id = ?
+           ORDER BY p.created_at DESC
+           LIMIT 10`,
+          [trab[0].id]
+        );
+        postulaciones = posts;
+      }
+    }
+
+    // Estadísticas rápidas
+    const [[{ total_tareas }]] = await db.query(
+      "SELECT COUNT(*) AS total_tareas FROM tareas WHERE cliente_id = ?", [id]
+    );
+    const [[{ tareas_completadas }]] = await db.query(
+      "SELECT COUNT(*) AS tareas_completadas FROM tareas WHERE cliente_id = ? AND estado = 'completada'", [id]
+    );
+
+    return success(res, {
+      usuario,
+      perfil_trabajador: perfilTrabajador,
+      tareas_cliente: tareasCliente,
+      postulaciones,
+      stats: {
+        total_tareas,
+        tareas_completadas,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al obtener detalle del usuario", 500);
+  }
+};
+
+module.exports = {
+  getUsuarios,
+  toggleEstadoUsuario,
+  getTrabajadoresPendientes,
+  verificarTrabajador,
+  getTareas,
+  getEstadisticas,
+  getUsuarioDetalle,
 };

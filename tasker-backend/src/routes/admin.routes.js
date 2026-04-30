@@ -6,6 +6,7 @@ const {
   verificarTrabajador,
   getTareas,
   getEstadisticas,
+  getUsuarioDetalle,
 } = require("../controllers/admin.controller");
 const {
   getAllAdmin,
@@ -59,6 +60,7 @@ const categoriaUpdateRules = [
 
 // ── Usuarios ──────────────────────────────────────────
 router.get("/usuarios", getUsuarios);
+router.get("/usuarios/:id", idParamRule, validate, getUsuarioDetalle);
 router.patch("/usuarios/:id/estado", idParamRule, validate, toggleEstadoUsuario);
 
 // ── Trabajadores ──────────────────────────────────────

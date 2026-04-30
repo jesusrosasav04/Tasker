@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Users, ChevronLeft, ChevronRight, ToggleLeft, ToggleRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Users, ChevronLeft, ChevronRight, ToggleLeft, ToggleRight, Eye } from "lucide-react";
 import api from "../../api/axios";
 import AdminLayout from "./AdminLayout";
 
@@ -128,7 +129,14 @@ export default function AdminUsuarios() {
                   </p>
 
                   {/* Toggle estado */}
-                  <div className="flex sm:justify-end">
+                  <div className="flex sm:justify-end items-center gap-2">
+                    <Link
+                      to={`/admin/usuarios/${u.id}`}
+                      title="Ver detalle"
+                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Link>
                     <button
                       onClick={() => handleToggle(u)}
                       disabled={toggling === u.id}

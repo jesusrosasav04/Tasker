@@ -17,6 +17,7 @@ import PostulacionesTarea from "./pages/PostulacionesTarea";
 import EditarPerfilTrabajador from "./pages/EditarPerfilTrabajador";
 import Admin from "./pages/admin/Admin";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
+import AdminUsuarioDetalle from "./pages/admin/AdminUsuarioDetalle";
 import AdminTrabajadores from "./pages/admin/AdminTrabajadores";
 import AdminTareas from "./pages/admin/AdminTareas";
 import AdminCategorias from "./pages/admin/AdminCategorias";
@@ -89,6 +90,14 @@ function App() {
           element={
             <ProtectedRoute roles={["admin"]}>
               <AdminUsuarios />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/usuarios/:id"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminUsuarioDetalle />
             </ProtectedRoute>
           }
         />
