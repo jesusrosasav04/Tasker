@@ -325,15 +325,6 @@ const cambiarEstadoTarea = async (req, res) => {
   }
 };
 
-module.exports = {
-  getUsuarioDetalle,
-  getUsuarios,
-  toggleEstadoUsuario,
-  getTrabajadoresPendientes,
-  verificarTrabajador,
-  getTareas,
-  getEstadisticas,
-};
 
 // GET /api/admin/usuarios/:id
 const getUsuarioDetalle = async (req, res) => {
