@@ -288,10 +288,10 @@ export default function DashboardCliente() {
                         </Link>
                       )}
                       <Link
-                        to={`/dashboard/cliente/tareas/${t.id}`}
+                        to={["en_progreso","completada"].includes(t.estado) ? `/tareas/${t.id}` : `/dashboard/cliente/tareas/${t.id}`}
                         className="text-xs font-medium text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition"
                         style={{ backgroundColor: "#10b981" }}>
-                        Postulaciones
+                        {["en_progreso","completada"].includes(t.estado) ? "Ver detalle" : "Postulaciones"}
                       </Link>
                     </div>
                   </div>

@@ -1,15 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
-  Briefcase,
-  ClipboardList,
-  CheckCircle,
-  Star,
-  MapPin,
-  DollarSign,
-  X,
-  User,
-  MessageSquare,
+  Briefcase, ClipboardList, CheckCircle, Star,
+  MapPin, DollarSign, X, User, MessageSquare, Eye,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
@@ -392,6 +385,14 @@ function TabTareasAceptadas() {
               >
                 <MessageSquare className="h-3.5 w-3.5" />
                 Chat
+              </Link>
+              <Link
+                to={`/tareas/${t.id}`}
+                style={{ backgroundColor: "#10b981" }}
+                className="flex items-center gap-1.5 text-xs font-medium text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Ver detalle
               </Link>
             </div>
           </div>

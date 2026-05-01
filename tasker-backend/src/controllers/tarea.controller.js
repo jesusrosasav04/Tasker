@@ -159,4 +159,74 @@ const completarTarea = async (req, res) => {
   }
 };
 
-module.exports = { crearTarea, misTareas, tareasDisponibles, completarTarea };
+// GET /api/tareas/:id — Detalle completo de una tarea
+const getTareaById = async (req, res) => {
+  const usuario_id = req.user.id;
+  const { id }     = req.params;
+
+  try {
+    const [tareas] = await db.query(
+      `SELECT
+        t.id, t.titulo, t.descripcion, t.presupuesto,
+        t.ubicacion, t.latitud, t.longitud,
+        t.estado, t.created_at,
+        c.nombre AS categoria,
+        u.id AS cliente_id, u.nombre AS cliente_nombre, u.email AS cliente_email,
+        u.telefono AS cliente_telefono
+       FROM tareas t
+       JOIN categorias c ON t.categoria_id = c.id
+       JOIN usuarios u ON t.cliente_id = u.id
+       WHERE t.id = ?`,
+      [id]
+    );
+
+    if (tareas.length === 0)
+      return error(res, "Tarea no encontrada", 404);
+
+    const tarea = tareas[0];
+
+    // Verificar que el usuario tiene acceso (cliente dueño o trabajador asignado)
+    const [acceso] = await db.query(
+      `SELECT 1 FROM tareas t
+       LEFT JOIN postulaciones p ON p.tarea_id = t.id AND p.estado = 'aceptada'
+       LEFT JOIN trabajador tr ON p.trabajador_id = tr.usuario_id
+       WHERE t.id = ? AND (t.cliente_id = ? OR tr.usuario_id = ?)
+       LIMIT 1`,
+      [id, usuario_id, usuario_id]
+    );
+
+    if (acceso.length === 0)
+      return error(res, "No tienes acceso a esta tarea", 403);
+
+    // Trabajador asignado (si hay)
+    const [trabajadorAsignado] = await db.query(
+      `SELECT
+        u.id, u.nombre, u.email, u.telefono,
+        t.calificacion_promedio,
+        p.precio_propuesto, p.mensaje
+       FROM postulaciones p
+       JOIN trabajador t ON p.trabajador_id = t.usuario_id
+       JOIN usuarios u ON t.usuario_id = u.id
+       WHERE p.tarea_id = ? AND p.estado = 'aceptada'
+       LIMIT 1`,
+      [id]
+    );
+
+    // Calificación de esta tarea (si ya fue calificada)
+    const [calificacion] = await db.query(
+      "SELECT puntuacion, comentario FROM calificaciones WHERE tarea_id = ? LIMIT 1",
+      [id]
+    );
+
+    return success(res, {
+      ...tarea,
+      trabajador: trabajadorAsignado[0] || null,
+      calificacion: calificacion[0] || null,
+    });
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al obtener la tarea", 500);
+  }
+};
+
+module.exports = { crearTarea, misTareas, tareasDisponibles, completarTarea, getTareaById };

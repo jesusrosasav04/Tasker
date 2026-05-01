@@ -16,6 +16,7 @@ import NuevaTarea from "./pages/NuevaTarea";
 import PostulacionesTarea from "./pages/PostulacionesTarea";
 import EditarPerfilTrabajador from "./pages/EditarPerfilTrabajador";
 import Chat from "./pages/Chat";
+import DetalleTarea from "./pages/DetalleTarea";
 import Admin from "./pages/admin/Admin";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminUsuarioDetalle from "./pages/admin/AdminUsuarioDetalle";
@@ -83,6 +84,14 @@ function App() {
           element={
             <ProtectedRoute roles={["cliente", "trabajador"]}>
               <Chat />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tareas/:id"
+          element={
+            <ProtectedRoute roles={["cliente", "trabajador"]}>
+              <DetalleTarea />
             </ProtectedRoute>
           }
         />
