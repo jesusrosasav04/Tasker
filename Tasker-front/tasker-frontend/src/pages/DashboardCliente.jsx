@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, ClipboardList, Clock, CheckCircle, Users, Star, X, AlertTriangle } from "lucide-react";
+import { Plus, ClipboardList, Clock, CheckCircle, Users, Star, X, AlertTriangle, MessageSquare } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
@@ -162,6 +162,17 @@ export default function DashboardCliente() {
     setModalTarea(null);
   };
 
+  const handleCompletar = async (tarea_id) => {
+    try {
+      await api.patch(`/tareas/${tarea_id}/completar`);
+      setTareas((prev) =>
+        prev.map((t) => t.id === tarea_id ? { ...t, estado: "completada" } : t)
+      );
+    } catch (err) {
+      alert(err.response?.data?.error || "Error al completar la tarea");
+    }
+  };
+
   return (
     <div className="flex-1 bg-gray-50 px-4 py-8 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -240,6 +251,16 @@ export default function DashboardCliente() {
                       <span className={`text-xs font-medium px-3 py-1 rounded-full ${estadoColor[t.estado] || "bg-gray-100 text-gray-600"}`}>
                         {estadoLabel[t.estado] || t.estado}
                       </span>
+                      {/* Botón completar — solo tareas en_progreso */}
+                      {t.estado === "en_progreso" && (
+                        <button
+                          onClick={() => handleCompletar(t.id)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-green-600 border border-green-200 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Completar
+                        </button>
+                      )}
                       {/* Botón calificar — solo tareas completadas sin calificar */}
                       {t.estado === "completada" && !yaCalificada && (
                         <button
@@ -256,11 +277,21 @@ export default function DashboardCliente() {
                           Calificada
                         </span>
                       )}
+                      {/* Chat — tareas en_progreso o completadas */}
+                      {["en_progreso", "completada"].includes(t.estado) && (
+                        <Link
+                          to={`/chat/${t.id}`}
+                          className="flex items-center gap-1.5 text-xs font-medium text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          Chat
+                        </Link>
+                      )}
                       <Link
                         to={`/dashboard/cliente/tareas/${t.id}`}
                         className="text-xs font-medium text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition"
                         style={{ backgroundColor: "#10b981" }}>
-                        Ver postulaciones
+                        Postulaciones
                       </Link>
                     </div>
                   </div>

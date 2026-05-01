@@ -57,11 +57,11 @@ export default function Register() {
     setLoading(true);
     try {
       const user = await register({
-        nombre: form.nombre,
-        apellidoP: form.apellidoP,
-        email: form.email,
-        password: form.password,
-        role: form.role,
+        nombre:    form.nombre,
+        email:     form.email,
+        password:  form.password,
+        role:      form.role,
+        categorias: form.role === "trabajador" ? form.categoriasSeleccionadas : undefined,
       });
       if (user.role === "trabajador") navigate("/dashboard/trabajador");
       else navigate("/dashboard/cliente");

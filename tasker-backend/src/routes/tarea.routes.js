@@ -59,3 +59,11 @@ router.get(
 );
 
 module.exports = router;
+
+const { completarTarea } = require("../controllers/tarea.controller");
+const { verifyToken, verifyRole } = require("../middlewares/auth.middleware");
+const { param } = require("express-validator");
+const validate = require("../middlewares/validate.middleware");
+
+router.patch("/:id/completar", verifyToken, verifyRole("cliente"),
+  param("id").isInt({ min: 1 }), validate, completarTarea);

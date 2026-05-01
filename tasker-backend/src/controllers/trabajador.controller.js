@@ -97,19 +97,26 @@ const getById = async (req, res) => {
 // PUT /api/trabajadores/perfil 🔒 (solo trabajador)
 const actualizarPerfil = async (req, res) => {
   const usuario_id = req.user.id;
-  const { descripcion, telefono } = req.body;
+  const { descripcion, telefono, categorias } = req.body;
 
   try {
-    await db.query(
-      `UPDATE trabajador SET descripcion = ? WHERE usuario_id = ?`,
-      [descripcion || null, usuario_id],
-    );
+    const [trab] = await db.query("SELECT id FROM trabajador WHERE usuario_id = ?", [usuario_id]);
+    if (trab.length === 0) return error(res, "Perfil de trabajador no encontrado", 404);
+    const trabajador_id = trab[0].id;
+
+    await db.query("UPDATE trabajador SET descripcion = ? WHERE usuario_id = ?", [descripcion || null, usuario_id]);
 
     if (telefono) {
-      await db.query(`UPDATE usuarios SET telefono = ? WHERE id = ?`, [
-        telefono,
-        usuario_id,
-      ]);
+      await db.query("UPDATE usuarios SET telefono = ? WHERE id = ?", [telefono, usuario_id]);
+    }
+
+    // Actualizar categorías si se enviaron
+    if (Array.isArray(categorias)) {
+      await db.query("DELETE FROM trabajador_categorias WHERE trabajador_id = ?", [trabajador_id]);
+      if (categorias.length > 0) {
+        const values = categorias.map((cat_id) => [trabajador_id, cat_id]);
+        await db.query("INSERT IGNORE INTO trabajador_categorias (trabajador_id, categoria_id) VALUES ?", [values]);
+      }
     }
 
     return success(res, null, "Perfil actualizado correctamente", 200);

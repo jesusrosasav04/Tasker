@@ -48,9 +48,14 @@ const register = async (req, res) => {
     const usuarioID = result.insertId;
 
     if (role === "trabajador") {
-      await db.query("INSERT INTO trabajador (usuario_id) VALUES (?)", [
-        usuarioID,
-      ]);
+      const [trab] = await db.query("INSERT INTO trabajador (usuario_id) VALUES (?)", [usuarioID]);
+      const trabajador_id = trab.insertId;
+
+      // Guardar categorías seleccionadas
+      if (Array.isArray(req.body.categorias) && req.body.categorias.length > 0) {
+        const values = req.body.categorias.map((cat_id) => [trabajador_id, cat_id]);
+        await db.query("INSERT IGNORE INTO trabajador_categorias (trabajador_id, categoria_id) VALUES ?", [values]);
+      }
     }
 
     const [usuario] = await db.query(

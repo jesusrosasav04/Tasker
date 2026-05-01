@@ -9,6 +9,7 @@ import {
   DollarSign,
   X,
   User,
+  MessageSquare,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
@@ -385,6 +386,13 @@ function TabTareasAceptadas() {
                   ${Number(t.precio_propuesto).toLocaleString("es-MX")}
                 </span>
               )}
+              <Link
+                to={`/chat/${t.id}`}
+                className="flex items-center gap-1.5 text-xs font-medium text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                Chat
+              </Link>
             </div>
           </div>
         </div>

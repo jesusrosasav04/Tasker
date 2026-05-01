@@ -133,4 +133,30 @@ const tareasDisponibles = async (req, res) => {
   }
 };
 
-module.exports = { crearTarea, misTareas, tareasDisponibles };
+// PATCH /api/tareas/:id/completar 🔒 (cliente dueño)
+const completarTarea = async (req, res) => {
+  const cliente_id = req.user.id;
+  const { id } = req.params;
+
+  try {
+    const [tareas] = await db.query(
+      "SELECT id, estado, cliente_id FROM tareas WHERE id = ? AND cliente_id = ?",
+      [id, cliente_id]
+    );
+
+    if (tareas.length === 0)
+      return error(res, "Tarea no encontrada o no tienes permiso", 404);
+
+    if (tareas[0].estado !== "en_progreso")
+      return error(res, "Solo puedes completar tareas en progreso", 400);
+
+    await db.query("UPDATE tareas SET estado = 'completada' WHERE id = ?", [id]);
+
+    return success(res, null, "Tarea marcada como completada");
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al completar la tarea", 500);
+  }
+};
+
+module.exports = { crearTarea, misTareas, tareasDisponibles, completarTarea };
