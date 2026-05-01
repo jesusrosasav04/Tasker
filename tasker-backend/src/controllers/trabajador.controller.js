@@ -131,16 +131,7 @@ const misTareas = async (req, res) => {
   const usuario_id = req.user.id;
 
   try {
-    const [trabajador] = await db.query(
-      `SELECT id FROM trabajador WHERE usuario_id = ?`,
-      [usuario_id],
-    );
-
-    if (trabajador.length === 0)
-      return error(res, "Trabajador no encontrado", 404);
-
-    const trabajador_id = trabajador[0].id;
-
+    // tareas.trabajador_id guarda directamente el usuario_id del trabajador asignado
     const [tareas] = await db.query(
       `SELECT
         t.id, t.titulo, t.descripcion, t.presupuesto,
@@ -152,10 +143,11 @@ const misTareas = async (req, res) => {
        FROM tareas t
        JOIN categorias c ON t.categoria_id = c.id
        JOIN usuarios u ON t.cliente_id = u.id
-       JOIN postulaciones p ON p.tarea_id = t.id
-       WHERE p.trabajador_id = ? AND p.estado = 'aceptada'
+       LEFT JOIN postulaciones p ON p.tarea_id = t.id
+         AND p.trabajador_id = ? AND p.estado = 'aceptada'
+       WHERE t.trabajador_id = ?
        ORDER BY t.created_at DESC`,
-      [trabajador_id],
+      [usuario_id, usuario_id],
     );
 
     return success(res, tareas);
