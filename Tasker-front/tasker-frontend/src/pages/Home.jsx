@@ -3,6 +3,23 @@ import { Link } from "react-router-dom";
 import { Search, ArrowRight, Star } from "lucide-react";
 import api from "../api/axios";
 
+function Avatar({ nombre }) {
+  const initials = nombre?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "T";
+  const palettes = [
+    { bg: "#d1fae5", color: "#065f46" },
+    { bg: "#dbeafe", color: "#1e40af" },
+    { bg: "#ede9fe", color: "#5b21b6" },
+    { bg: "#fef3c7", color: "#92400e" },
+  ];
+  const p = palettes[nombre?.charCodeAt(0) % palettes.length] || palettes[0];
+  return (
+    <div style={{ background: p.bg, color: p.color }}
+      className="h-14 w-14 rounded-full flex items-center justify-center font-semibold text-base flex-shrink-0">
+      {initials}
+    </div>
+  );
+}
+
 export default function Home() {
   const [categorias, setCategorias]     = useState([]);
   const [proveedores, setProveedores]   = useState([]);
