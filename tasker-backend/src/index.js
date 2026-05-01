@@ -38,6 +38,7 @@ app.use("/api/categorias", require("./routes/categoria.routes"));
 app.use("/api/trabajadores", require("./routes/trabajador.routes"));
 app.use("/api/tareas", require("./routes/tarea.routes"));
 app.use("/api/postulaciones", require("./routes/postulacion.routes"));
+app.use("/api/calificaciones", require("./routes/calificacion.routes"));
 app.use("/api/admin", require("./routes/admin.routes"));
 
 app.use((err, req, res, next) => {
