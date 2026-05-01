@@ -39,6 +39,11 @@ app.use("/api/trabajadores", require("./routes/trabajador.routes"));
 app.use("/api/tareas", require("./routes/tarea.routes"));
 app.use("/api/postulaciones", require("./routes/postulacion.routes"));
 app.use("/api/calificaciones", require("./routes/calificacion.routes"));
+app.use("/api/mensajes", require("./routes/mensaje.routes"));
+app.use("/api/notificaciones", require("./routes/notificacion.routes"));
+app.use("/api/pagos", require("./routes/pago.routes"));
+app.use("/api/documentos", require("./routes/documento.routes"));
+app.use("/api/usuarios", require("./routes/usuario.routes"));
 app.use("/api/admin", require("./routes/admin.routes"));
 
 app.use((err, req, res, next) => {

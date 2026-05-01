@@ -1,5 +1,6 @@
 const pool = require("../config/db");
 const { success, error } = require("../utils/response");
+const { crearNotificacion } = require("./notificacion.controller");
 
 // POST /api/postulaciones — trabajador se postula a una tarea
 const crearPostulacion = async (req, res) => {
@@ -40,6 +41,10 @@ const crearPostulacion = async (req, res) => {
        VALUES (?, ?, ?, ?, 'pendiente')`,
       [tarea_id, trabajador_id, mensaje || null, precio_propuesto || null],
     );
+
+    // Notificar al cliente
+    const [trabajador] = await pool.query("SELECT nombre FROM usuarios WHERE id = ?", [trabajador_id]);
+    crearNotificacion(tareas[0].cliente_id, `${trabajador[0]?.nombre} se postuló a tu tarea #${tarea_id}`);
 
     return success(
       res,
@@ -161,6 +166,11 @@ const aceptarPostulacion = async (req, res) => {
     );
 
     await conn.commit();
+
+    // Notificar al trabajador aceptado
+    const [clienteInfo] = await pool.query("SELECT nombre FROM usuarios WHERE id = ?", [req.user.id]);
+    crearNotificacion(trabajador_id, `¡Tu postulación fue aceptada! ${clienteInfo[0]?.nombre} te asignó la tarea #${tarea_id}`);
+
     return success(res, null, "Postulación aceptada, tarea en progreso");
   } catch (err) {
     await conn.rollback();
