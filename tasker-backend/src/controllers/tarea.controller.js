@@ -139,7 +139,7 @@ const completarTarea = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const [tareas] = await db.query(
+    const [tareas] = await pool.query(
       "SELECT id, estado, cliente_id FROM tareas WHERE id = ? AND cliente_id = ?",
       [id, cliente_id]
     );
@@ -150,7 +150,7 @@ const completarTarea = async (req, res) => {
     if (tareas[0].estado !== "en_progreso")
       return error(res, "Solo puedes completar tareas en progreso", 400);
 
-    await db.query("UPDATE tareas SET estado = 'completada' WHERE id = ?", [id]);
+    await pool.query("UPDATE tareas SET estado = 'completada' WHERE id = ?", [id]);
 
     return success(res, null, "Tarea marcada como completada");
   } catch (err) {
@@ -165,7 +165,7 @@ const getTareaById = async (req, res) => {
   const { id }     = req.params;
 
   try {
-    const [tareas] = await db.query(
+    const [tareas] = await pool.query(
       `SELECT
         t.id, t.titulo, t.descripcion, t.presupuesto,
         t.ubicacion, t.latitud, t.longitud,
@@ -186,11 +186,10 @@ const getTareaById = async (req, res) => {
     const tarea = tareas[0];
 
     // Verificar que el usuario tiene acceso (cliente dueño o trabajador asignado)
-    const [acceso] = await db.query(
-      `SELECT 1 FROM tareas t
-       LEFT JOIN postulaciones p ON p.tarea_id = t.id AND p.estado = 'aceptada'
-       LEFT JOIN trabajador tr ON p.trabajador_id = tr.usuario_id
-       WHERE t.id = ? AND (t.cliente_id = ? OR tr.usuario_id = ?)
+    // tareas.trabajador_id guarda directamente el usuario_id del trabajador
+    const [acceso] = await pool.query(
+      `SELECT 1 FROM tareas
+       WHERE id = ? AND (cliente_id = ? OR trabajador_id = ?)
        LIMIT 1`,
       [id, usuario_id, usuario_id]
     );
@@ -199,21 +198,22 @@ const getTareaById = async (req, res) => {
       return error(res, "No tienes acceso a esta tarea", 403);
 
     // Trabajador asignado (si hay)
-    const [trabajadorAsignado] = await db.query(
+    // postulaciones.trabajador_id = usuarios.id directamente
+    const [trabajadorAsignado] = await pool.query(
       `SELECT
         u.id, u.nombre, u.email, u.telefono,
-        t.calificacion_promedio,
+        tr.calificacion_promedio,
         p.precio_propuesto, p.mensaje
        FROM postulaciones p
-       JOIN trabajador t ON p.trabajador_id = t.usuario_id
-       JOIN usuarios u ON t.usuario_id = u.id
+       JOIN usuarios u ON p.trabajador_id = u.id
+       LEFT JOIN trabajador tr ON tr.usuario_id = u.id
        WHERE p.tarea_id = ? AND p.estado = 'aceptada'
        LIMIT 1`,
       [id]
     );
 
     // Calificación de esta tarea (si ya fue calificada)
-    const [calificacion] = await db.query(
+    const [calificacion] = await pool.query(
       "SELECT puntuacion, comentario FROM calificaciones WHERE tarea_id = ? LIMIT 1",
       [id]
     );
