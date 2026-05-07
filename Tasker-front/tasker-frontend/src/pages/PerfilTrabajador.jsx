@@ -47,7 +47,7 @@ export default function PerfilTrabajador() {
         <p className="text-gray-500">{errMsg}</p>
         <button onClick={() => navigate("/proveedores")}
           className="mt-4 text-sm text-emerald-600 underline">
-          Volver a proveedores
+          Volver a especialistas
         </button>
       </div>
     );

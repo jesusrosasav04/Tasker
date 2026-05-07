@@ -92,7 +92,7 @@ export default function Proveedores() {
     <div className="flex-1 px-4 py-10 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Proveedores disponibles</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Especialistas disponibles</h1>
           <p className="mt-2 text-gray-500">Encuentra el profesional ideal para tu servicio</p>
         </div>
 
@@ -100,7 +100,7 @@ export default function Proveedores() {
         <div className="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 sm:flex-row sm:items-center mb-8">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="Buscar proveedor..."
+            <input type="text" placeholder="Buscar especialista..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2"
               value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
           </div>
@@ -122,7 +122,7 @@ export default function Proveedores() {
           </div>
         ) : trabajadores.length === 0 ? (
           <div className="rounded-xl border border-gray-200 bg-white py-16 text-center">
-            <p className="text-lg font-medium text-gray-900">No se encontraron proveedores</p>
+            <p className="text-lg font-medium text-gray-900">No se encontraron especialistas</p>
             <p className="mt-2 text-gray-500">Intenta ajustar los filtros de búsqueda</p>
           </div>
         ) : (
@@ -137,7 +137,7 @@ export default function Proveedores() {
               ))}
             </div>
             <p className="mt-6 text-center text-sm text-gray-500">
-              {trabajadores.length} proveedor{trabajadores.length !== 1 ? "es" : ""} encontrado{trabajadores.length !== 1 ? "s" : ""}
+              {trabajadores.length} especialista{trabajadores.length !== 1 ? "s" : ""} encontrado{trabajadores.length !== 1 ? "s" : ""}
             </p>
           </>
         )}

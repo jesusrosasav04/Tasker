@@ -37,7 +37,7 @@ export default function Home() {
         <div className="mx-auto max-w-3xl">
           <h1 className="text-5xl font-extrabold leading-tight text-gray-900 lg:text-6xl">
             Conecta con los mejores <br />
-            <span style={{ color: "#10b981" }}>proveedores locales</span>
+            <span style={{ color: "#10b981" }}>especialistas locales</span>
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg text-gray-500">
             Encuentra expertos confiables en plomería, electricidad, limpieza y más.
@@ -48,7 +48,7 @@ export default function Home() {
               style={{ backgroundColor: "#10b981" }}
               className="flex items-center gap-2 text-white px-6 py-3 rounded-xl font-medium hover:opacity-90 transition text-sm">
               <Search className="h-4 w-4" />
-              Buscar proveedores
+              Buscar especialistas
             </Link>
             <Link to="/register"
               className="flex items-center gap-2 border border-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-50 transition text-sm">
@@ -62,7 +62,7 @@ export default function Home() {
         <div className="mx-auto mt-20 max-w-2xl border-t border-gray-200 pt-10">
           <div className="grid grid-cols-3 gap-8">
             {[
-              { value: proveedores.length > 0 ? `${proveedores.length}+` : "—", label: "Proveedores" },
+              { value: proveedores.length > 0 ? `${proveedores.length}+` : "—", label: "Especialistas" },
               { value: categorias.length > 0 ? `${categorias.length}` : "—",   label: "Categorías"  },
               { value: "4.8", label: "Calificación" },
             ].map((s) => (
@@ -99,13 +99,13 @@ export default function Home() {
         </section>
       )}
 
-      {/* Proveedores destacados */}
+      {/* Especialistas destacados */}
       {proveedores.length > 0 && (
         <section style={{ backgroundColor: "#f8fafc" }} className="px-4 py-20 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="mb-10 flex items-start justify-between">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900">Proveedores destacados</h2>
+                <h2 className="text-3xl font-bold text-gray-900">Especialistas destacados</h2>
                 <p className="mt-2 text-gray-500">Los mejores profesionales calificados</p>
               </div>
               <Link to="/proveedores"

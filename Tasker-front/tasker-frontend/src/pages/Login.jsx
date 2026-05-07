@@ -54,7 +54,7 @@ export default function Login() {
         </p>
         <div className="mt-12 grid grid-cols-3 gap-8 text-center">
           {[
-            ["500+", "Proveedores"],
+            ["500+", "Especialistas"],
             ["10K+", "Servicios"],
             ["4.8★", "Calificación"],
           ].map(([v, l]) => (

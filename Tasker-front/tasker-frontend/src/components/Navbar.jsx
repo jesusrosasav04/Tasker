@@ -6,7 +6,7 @@ import api from "../api/axios";
 
 const navLinks = [
   { to: "/", label: "Inicio" },
-  { to: "/proveedores", label: "Proveedores" },
+  { to: "/proveedores", label: "Especialistas" },
 ];
 
 function NotificacionesPanel({ onClose }) {
