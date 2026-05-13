@@ -201,7 +201,7 @@ const getTareaById = async (req, res) => {
     // postulaciones.trabajador_id = usuarios.id directamente
     const [trabajadorAsignado] = await pool.query(
       `SELECT
-        u.id, u.nombre, u.email, u.telefono,
+        u.id, u.nombre, u.email,
         tr.calificacion_promedio,
         p.precio_propuesto, p.mensaje
        FROM postulaciones p
