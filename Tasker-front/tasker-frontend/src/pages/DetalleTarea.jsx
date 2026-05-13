@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft, MapPin, DollarSign, Tag, User,
   Calendar, CheckCircle, Clock, MessageSquare,
-  Star, Phone, ExternalLink,
+  Star, ExternalLink,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
@@ -229,12 +229,6 @@ export default function DetalleTarea() {
                   <div className="flex-1">
                     <p className="font-semibold text-gray-900">{tarea.trabajador.nombre}</p>
                     <p className="text-sm text-gray-500">{tarea.trabajador.email}</p>
-                    {tarea.trabajador.telefono && (
-                      <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                        <Phone className="h-3.5 w-3.5" />
-                        {tarea.trabajador.telefono}
-                      </p>
-                    )}
                     {tarea.trabajador.calificacion_promedio > 0 && (
                       <p className="text-sm text-amber-600 mt-1">
                         ⭐ {Number(tarea.trabajador.calificacion_promedio).toFixed(1)}

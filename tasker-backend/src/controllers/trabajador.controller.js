@@ -13,7 +13,6 @@ const getAll = async (req, res) => {
         t.verificado,
         u.id AS usuario_id,
         u.nombre,
-        u.telefono,
         t.calificacion_promedio,
         GROUP_CONCAT(DISTINCT c.nombre SEPARATOR ', ') AS categorias
       FROM trabajador t
@@ -59,7 +58,6 @@ const getById = async (req, res) => {
         u.id AS usuario_id,
         u.nombre,
         u.email,
-        u.telefono,
         u.created_at,
         GROUP_CONCAT(DISTINCT c.nombre SEPARATOR ', ') AS categorias
       FROM trabajador t

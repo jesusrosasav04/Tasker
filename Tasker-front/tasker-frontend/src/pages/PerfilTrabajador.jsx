@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Star, MapPin, Phone, Tag, ArrowLeft } from "lucide-react";
+import { Star, MapPin, Tag, ArrowLeft } from "lucide-react";
 import api from "../api/axios";
 
 function Estrellas({ puntuacion }) {
@@ -93,12 +93,6 @@ export default function PerfilTrabajador() {
               </div>
 
               <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-500">
-                {trabajador.telefono && (
-                  <span className="flex items-center gap-1">
-                    <Phone className="h-4 w-4 text-gray-400" />
-                    {trabajador.telefono}
-                  </span>
-                )}
                 <span className="flex items-center gap-1">
                   🗓 Miembro desde {new Date(trabajador.created_at).getFullYear()}
                 </span>
