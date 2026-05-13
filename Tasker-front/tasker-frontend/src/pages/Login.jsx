@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Wrench, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -7,7 +7,9 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 export default function Login() {
   const { login } = useAuth();
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const redirectTo = new URLSearchParams(location.search).get("redirect") || null;
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,7 +21,8 @@ export default function Login() {
     setLoading(true);
     try {
       const user = await login(form.email, form.password);
-      if (user.role === "admin") navigate("/admin");
+      if (redirectTo) navigate(redirectTo);
+      else if (user.role === "admin") navigate("/admin");
       else if (user.role === "trabajador") navigate("/dashboard/trabajador");
       else navigate("/dashboard/cliente");
     } catch (err) {
@@ -159,7 +162,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => {
-                window.location.href = `${API_URL}/auth/google`;
+                window.location.href = redirectTo ? `${API_URL}/auth/google?redirect=${encodeURIComponent(redirectTo)}` : `${API_URL}/auth/google`;
               }}
               className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-xl py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
             >
@@ -187,7 +190,7 @@ export default function Login() {
             <div className="mt-6 text-center text-sm text-gray-500">
               ¿No tienes cuenta?{" "}
               <Link
-                to="/register"
+                to={redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
                 className="text-primary font-medium hover:underline"
               >
                 Regístrate

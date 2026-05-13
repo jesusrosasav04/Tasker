@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Wrench, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
@@ -9,6 +9,8 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 export default function Register() {
   const { register } = useAuth();
   const navigate      = useNavigate();
+  const location      = useLocation();
+  const redirectTo    = new URLSearchParams(location.search).get("redirect") || null;
 
   const [step, setStep]         = useState(1);
   const [showPass, setShowPass] = useState(false);
@@ -63,7 +65,8 @@ export default function Register() {
         role:       form.role,
         categorias: form.role === "trabajador" ? form.categoriasSeleccionadas : undefined,
       });
-      if (user.role === "trabajador") navigate("/dashboard/trabajador");
+      if (redirectTo) navigate(redirectTo);
+      else if (user.role === "trabajador") navigate("/dashboard/trabajador");
       else navigate("/dashboard/cliente");
     } catch (err) {
       setError(err.response?.data?.error || "Error al registrarse");

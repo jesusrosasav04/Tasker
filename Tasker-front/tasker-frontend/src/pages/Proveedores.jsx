@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, MapPin, Star } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
-function ProviderCard({ t, onClick }) {
+const NUEVA_TAREA = "/dashboard/cliente/tareas/nueva";
+
+function ProviderCard({ t, onContactar, onVerPerfil }) {
   const initials = t.nombre?.[0]?.toUpperCase() || "T";
   const colors = ["bg-blue-500","bg-emerald-500","bg-purple-500","bg-red-500","bg-amber-500","bg-pink-500"];
   const color  = colors[t.nombre?.charCodeAt(0) % colors.length] || "bg-gray-400";
@@ -51,11 +54,11 @@ function ProviderCard({ t, onClick }) {
       </div>
       <div className="border-t border-gray-100 bg-gray-50/50 px-6 py-4">
         <div className="flex gap-3">
-          <button onClick={onClick}
+          <button onClick={onVerPerfil}
             className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition">
             Ver perfil
           </button>
-          <button onClick={onClick}
+          <button onClick={onContactar}
             style={{ backgroundColor: "#10b981" }}
             className="flex-1 text-white py-2 rounded-lg text-sm font-medium hover:opacity-90 transition">
             Contactar
@@ -73,6 +76,15 @@ export default function Proveedores() {
   const [busqueda, setBusqueda]         = useState("");
   const [categoria, setCategoria]       = useState("");
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleContactar = () => {
+    if (user) {
+      navigate(NUEVA_TAREA);
+    } else {
+      navigate(`/login?redirect=${encodeURIComponent(NUEVA_TAREA)}`);
+    }
+  };
 
   useEffect(() => {
     api.get("/categorias").then((r) => setCategorias(r.data.data || []));
@@ -132,7 +144,8 @@ export default function Proveedores() {
                 <ProviderCard
                   key={t.trabajador_id}
                   t={t}
-                  onClick={() => navigate(`/trabajador/${t.trabajador_id}`)}
+                  onContactar={handleContactar}
+                  onVerPerfil={() => navigate(`/trabajador/${t.trabajador_id}`)}
                 />
               ))}
             </div>
