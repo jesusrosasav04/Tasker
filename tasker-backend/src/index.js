@@ -2,22 +2,25 @@ require("dotenv").config();
 const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
-const xss = require("xss-clean");
 const hpp = require("hpp");
 const passport = require("passport");
-require("./config/passport"); // carga la estrategia Google
+require("./config/passport");
 const { apiLimiter } = require("./middlewares/rateLimiter.middleware");
+const { generarCsrfToken, verifyCsrf } = require("./middlewares/csrf.middleware");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
 app.use(helmet());
-app.use(xss());
 app.use(hpp());
+app.use(cookieParser());
 app.use(passport.initialize());
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:4173",
   process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_2,
 ].filter(Boolean);
 
 app.use(
@@ -35,12 +38,24 @@ app.use(
 app.use(express.json({ limit: "10kb" }));
 app.use("/api", apiLimiter);
 
-// ─── Rutas ─────────────────────────────────────────────────
+// Endpoint para obtener token CSRF
+app.get("/api/csrf-token", generarCsrfToken);
+
+// Aplicar verificación CSRF a todas las rutas mutantes
+app.use(verifyCsrf);
+
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/categorias", require("./routes/categoria.routes"));
 app.use("/api/trabajadores", require("./routes/trabajador.routes"));
 app.use("/api/tareas", require("./routes/tarea.routes"));
 app.use("/api/postulaciones", require("./routes/postulacion.routes"));
+app.use("/api/calificaciones", require("./routes/calificacion.routes"));
+app.use("/api/mensajes", require("./routes/mensaje.routes"));
+app.use("/api/notificaciones", require("./routes/notificacion.routes"));
+app.use("/api/pagos", require("./routes/pago.routes"));
+app.use("/api/documentos", require("./routes/documento.routes"));
+app.use("/api/usuarios", require("./routes/usuario.routes"));
+app.use("/api/admin", require("./routes/admin.routes"));
 
 app.use((err, req, res, next) => {
   if (err.message?.includes("CORS")) {

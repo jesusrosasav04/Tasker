@@ -6,6 +6,10 @@ node_modules/
 .env.local
 .env.production
 
+# Llaves JWT (NUNCA subir la privada al repo)
+keys/*.pem
+keys/*.key
+
 # Logs
 logs/
 *.log

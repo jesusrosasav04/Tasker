@@ -133,4 +133,100 @@ const tareasDisponibles = async (req, res) => {
   }
 };
 
-module.exports = { crearTarea, misTareas, tareasDisponibles };
+// PATCH /api/tareas/:id/completar 🔒 (cliente dueño)
+const completarTarea = async (req, res) => {
+  const cliente_id = req.user.id;
+  const { id } = req.params;
+
+  try {
+    const [tareas] = await pool.query(
+      "SELECT id, estado, cliente_id FROM tareas WHERE id = ? AND cliente_id = ?",
+      [id, cliente_id]
+    );
+
+    if (tareas.length === 0)
+      return error(res, "Tarea no encontrada o no tienes permiso", 404);
+
+    if (tareas[0].estado !== "en_progreso")
+      return error(res, "Solo puedes completar tareas en progreso", 400);
+
+    await pool.query("UPDATE tareas SET estado = 'completada' WHERE id = ?", [id]);
+
+    return success(res, null, "Tarea marcada como completada");
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al completar la tarea", 500);
+  }
+};
+
+// GET /api/tareas/:id — Detalle completo de una tarea
+const getTareaById = async (req, res) => {
+  const usuario_id = req.user.id;
+  const { id }     = req.params;
+
+  try {
+    const [tareas] = await pool.query(
+      `SELECT
+        t.id, t.titulo, t.descripcion, t.presupuesto,
+        t.ubicacion, t.latitud, t.longitud,
+        t.estado, t.created_at,
+        c.nombre AS categoria,
+        u.id AS cliente_id, u.nombre AS cliente_nombre, u.email AS cliente_email,
+        u.telefono AS cliente_telefono
+       FROM tareas t
+       JOIN categorias c ON t.categoria_id = c.id
+       JOIN usuarios u ON t.cliente_id = u.id
+       WHERE t.id = ?`,
+      [id]
+    );
+
+    if (tareas.length === 0)
+      return error(res, "Tarea no encontrada", 404);
+
+    const tarea = tareas[0];
+
+    // Verificar que el usuario tiene acceso (cliente dueño o trabajador asignado)
+    // tareas.trabajador_id guarda directamente el usuario_id del trabajador
+    const [acceso] = await pool.query(
+      `SELECT 1 FROM tareas
+       WHERE id = ? AND (cliente_id = ? OR trabajador_id = ?)
+       LIMIT 1`,
+      [id, usuario_id, usuario_id]
+    );
+
+    if (acceso.length === 0)
+      return error(res, "No tienes acceso a esta tarea", 403);
+
+    // Trabajador asignado (si hay)
+    // postulaciones.trabajador_id = usuarios.id directamente
+    const [trabajadorAsignado] = await pool.query(
+      `SELECT
+        u.id, u.nombre, u.email,
+        tr.calificacion_promedio,
+        p.precio_propuesto, p.mensaje
+       FROM postulaciones p
+       JOIN usuarios u ON p.trabajador_id = u.id
+       LEFT JOIN trabajador tr ON tr.usuario_id = u.id
+       WHERE p.tarea_id = ? AND p.estado = 'aceptada'
+       LIMIT 1`,
+      [id]
+    );
+
+    // Calificación de esta tarea (si ya fue calificada)
+    const [calificacion] = await pool.query(
+      "SELECT puntuacion, comentario FROM calificaciones WHERE tarea_id = ? LIMIT 1",
+      [id]
+    );
+
+    return success(res, {
+      ...tarea,
+      trabajador: trabajadorAsignado[0] || null,
+      calificacion: calificacion[0] || null,
+    });
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al obtener la tarea", 500);
+  }
+};
+
+module.exports = { crearTarea, misTareas, tareasDisponibles, completarTarea, getTareaById };

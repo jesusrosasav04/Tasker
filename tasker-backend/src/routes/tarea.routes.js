@@ -3,10 +3,12 @@ const {
   crearTarea,
   misTareas,
   tareasDisponibles,
+  completarTarea,
+  getTareaById,
 } = require("../controllers/tarea.controller");
 const { verifyToken, verifyRole } = require("../middlewares/auth.middleware");
 const validate = require("../middlewares/validate.middleware");
-const { body } = require("express-validator");
+const { body, param } = require("express-validator");
 
 const tareaRules = [
   body("titulo")
@@ -41,21 +43,12 @@ const tareaRules = [
     .withMessage("Longitud inválida"),
 ];
 
-router.post(
-  "/",
-  verifyToken,
-  verifyRole("cliente"),
-  tareaRules,
-  validate,
-  crearTarea,
-);
-
+router.post("/", verifyToken, verifyRole("cliente"), tareaRules, validate, crearTarea);
 router.get("/mis-tareas", verifyToken, verifyRole("cliente"), misTareas);
-router.get(
-  "/disponibles",
-  verifyToken,
-  verifyRole("trabajador"),
-  tareasDisponibles,
-);
+router.get("/disponibles", verifyToken, verifyRole("trabajador"), tareasDisponibles);
+router.patch("/:id/completar", verifyToken, verifyRole("cliente"),
+  param("id").isInt({ min: 1 }), validate, completarTarea);
+router.get("/:id", verifyToken,
+  param("id").isInt({ min: 1 }), validate, getTareaById);
 
 module.exports = router;

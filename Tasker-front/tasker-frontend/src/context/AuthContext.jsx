@@ -38,6 +38,8 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
+    // Limpiar cookie HttpOnly del servidor
+    api.post("/auth/logout").catch(() => {});
   };
 
   return (
