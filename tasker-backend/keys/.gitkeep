@@ -1,0 +1,7 @@
+# Esta carpeta contiene las llaves RSA para firmar JWT (RS256).
+# Los archivos .pem están en .gitignore — NUNCA se suben al repo.
+# Para generar las llaves localmente ejecuta:
+#
+#   npm run keys:generate
+#
+# Esto crea private.pem y public.pem en este directorio.

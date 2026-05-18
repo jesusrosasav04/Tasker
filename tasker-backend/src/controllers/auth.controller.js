@@ -2,6 +2,11 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken"); // ← debe estar ARRIBA
 const db = require("../config/db");
 const { success, error } = require("../utils/response");
+const {
+  privateKey,
+  JWT_ALGORITHM,
+  JWT_EXPIRES_IN,
+} = require("../config/jwt-keys");
 
 // ─── Helper ────────────────────────────────────────────────
 const generarToken = (usuario) => {
@@ -11,8 +16,8 @@ const generarToken = (usuario) => {
       email: usuario.email,
       role: usuario.role_nombre, // ← siempre el nombre: "cliente", "trabajador", "admin"
     },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN },
+    privateKey,
+    { algorithm: JWT_ALGORITHM, expiresIn: JWT_EXPIRES_IN },
   );
 };
 
@@ -137,11 +142,11 @@ const me = async (req, res) => {
 const googleCallback = (req, res) => {
   const user = req.user;
 
-  // Genera token consistente con login normal
+  // Genera token consistente con login normal (RS256, llave privada)
   const token = jwt.sign(
     { id: user.id, email: user.email, role: user.role_nombre || "cliente" },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN },
+    privateKey,
+    { algorithm: JWT_ALGORITHM, expiresIn: JWT_EXPIRES_IN },
   );
 
   res.redirect(

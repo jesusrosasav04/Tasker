@@ -77,18 +77,34 @@ cd tasker-backend
 npm install
 ```
 
-Crea un archivo `.env` en `tasker-backend/`:
+Genera el par de llaves RSA para firmar JWT (RS256 — firma digital asimétrica):
+
+```bash
+npm run keys:generate
+```
+
+Esto crea `keys/private.pem` y `keys/public.pem`. Las llaves quedan en `.gitignore`.
+
+Copia `.env.example` a `.env` y ajusta según tu entorno:
 
 ```env
 PORT=3000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=tu_password
 DB_NAME=tasker
-JWT_SECRET=tu_secreto_super_seguro
+
+# JWT con RS256 (asimétrico)
+JWT_PRIVATE_KEY_PATH=./keys/private.pem
+JWT_PUBLIC_KEY_PATH=./keys/public.pem
+JWT_EXPIRES_IN=2h
+
 GOOGLE_CLIENT_ID=tu_google_client_id
 GOOGLE_CLIENT_SECRET=tu_google_client_secret
-FRONTEND_URL=http://localhost:5173
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
 ```
 
 Inicia el servidor:
@@ -142,6 +158,7 @@ POST   /api/auth/login             Inicio de sesión
 GET    /api/auth/google            Login con Google
 GET    /api/auth/google/callback   Callback OAuth Google
 GET    /api/auth/me                Perfil del usuario autenticado
+GET    /api/auth/public-key        Llave pública RSA para verificar JWT
 ```
 
 ### Tareas
@@ -214,14 +231,16 @@ GET    /api/admin/tareas                          Listar todas las tareas
 
 ## 🔐 Seguridad implementada
 
-- **JWT** en cada request como `Authorization: Bearer <token>`
-- **Helmet** — headers HTTP seguros
+- **JWT firmado con RS256** (firma digital asimétrica RSA) — el servidor firma con llave privada, cualquier cliente verifica con la llave pública
+- **GET `/api/auth/public-key`** expone la llave pública para verificación externa
+- **Whitelist de algoritmos** en `jwt.verify` previene ataques de algorithm confusion
+- **Helmet** — headers HTTP seguros (X-Frame-Options, HSTS, CSP, etc.)
 - **CORS** — solo permite el origen del frontend
 - **HPP** — prevención de HTTP Parameter Pollution
-- **express-rate-limit** — límite de peticiones por IP
-- **express-mongo-sanitize** — sanitización de inputs
-- **Bcryptjs** — hash de contraseñas
+- **express-rate-limit** — límite de peticiones por IP (10/15min en auth, 100/min en API)
 - **express-validator** — validación de datos de entrada
+- **Bcryptjs** — hash de contraseñas con 10 rounds
+- **Queries parametrizadas** en todos los controladores (prevención de SQL injection)
 - Interceptor automático en frontend: en error `401` limpia el token y redirige a `/login`
 
 ---
