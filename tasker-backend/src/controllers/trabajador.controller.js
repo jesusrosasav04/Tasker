@@ -1,5 +1,6 @@
 const db = require("../config/db");
 const { success, error } = require("../utils/response");
+const { decrypt } = require("../config/encryption");
 
 // GET /api/trabajadores
 const getAll = async (req, res) => {
@@ -175,7 +176,10 @@ const misCalificaciones = async (req, res) => {
       [usuario_id],
     );
 
-    return success(res, calificaciones);
+    return success(res, calificaciones.map((c) => ({
+      ...c,
+      comentario: decrypt(c.comentario),
+    })));
   } catch (err) {
     console.error(err);
     return error(res, "Error al obtener calificaciones", 500);

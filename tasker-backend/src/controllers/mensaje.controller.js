@@ -1,5 +1,6 @@
 const db = require("../config/db");
 const { success, error } = require("../utils/response");
+const { encrypt, decrypt } = require("../config/encryption");
 
 // GET /api/mensajes/:tarea_id — Obtener mensajes de una tarea
 const getMensajes = async (req, res) => {
@@ -39,7 +40,13 @@ const getMensajes = async (req, res) => {
       [tarea_id, usuario_id]
     );
 
-    return success(res, mensajes);
+    // Descifrar mensajes antes de enviar al cliente
+    const mensajesDescifrados = mensajes.map((m) => ({
+      ...m,
+      mensaje: decrypt(m.mensaje),
+    }));
+
+    return success(res, mensajesDescifrados);
   } catch (err) {
     console.error(err);
     return error(res, "Error al obtener mensajes", 500);
@@ -80,7 +87,7 @@ const enviarMensaje = async (req, res) => {
     const [result] = await db.query(
       `INSERT INTO mensajes (tarea_id, remitente_id, receptor_id, mensaje)
        VALUES (?, ?, ?, ?)`,
-      [tarea_id, remitente_id, receptor_id, mensaje.trim()]
+      [tarea_id, remitente_id, receptor_id, encrypt(mensaje.trim())]
     );
 
     // Crear notificación para el receptor

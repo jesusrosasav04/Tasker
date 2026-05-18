@@ -1,5 +1,6 @@
 const db = require("../config/db");
 const { success, error } = require("../utils/response");
+const { encrypt, decrypt } = require("../config/encryption");
 
 // POST /api/calificaciones
 // Solo el cliente dueño de la tarea puede calificar, solo si está completada, solo una vez
@@ -41,7 +42,7 @@ const crearCalificacion = async (req, res) => {
     await db.query(
       `INSERT INTO calificaciones (tarea_id, cliente_id, trabajador_id, puntuacion, comentario)
        VALUES (?, ?, ?, ?, ?)`,
-      [tarea_id, cliente_id, tarea.trabajador_usuario_id, puntuacion, comentario?.trim() || null]
+      [tarea_id, cliente_id, tarea.trabajador_usuario_id, puntuacion, comentario?.trim() ? encrypt(comentario.trim()) : null]
     );
 
     // Actualizar calificacion_promedio en la tabla trabajador
@@ -77,7 +78,7 @@ const getCalificacionTarea = async (req, res) => {
       [tarea_id, cliente_id]
     );
 
-    return success(res, rows[0] || null);
+    return success(res, rows[0] ? { ...rows[0], comentario: decrypt(rows[0].comentario) } : null);
   } catch (err) {
     console.error(err);
     return error(res, "Error al verificar calificación", 500);
