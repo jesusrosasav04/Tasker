@@ -6,11 +6,14 @@ const hpp = require("hpp");
 const passport = require("passport");
 require("./config/passport");
 const { apiLimiter } = require("./middlewares/rateLimiter.middleware");
+const { generarCsrfToken, verifyCsrf } = require("./middlewares/csrf.middleware");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
 app.use(helmet());
 app.use(hpp());
+app.use(cookieParser());
 app.use(passport.initialize());
 
 const allowedOrigins = [
@@ -32,6 +35,12 @@ app.use(
 
 app.use(express.json({ limit: "10kb" }));
 app.use("/api", apiLimiter);
+
+// Endpoint para obtener token CSRF
+app.get("/api/csrf-token", generarCsrfToken);
+
+// Aplicar verificación CSRF a todas las rutas mutantes
+app.use(verifyCsrf);
 
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/categorias", require("./routes/categoria.routes"));
