@@ -2,6 +2,25 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken"); // ← debe estar ARRIBA
 const db = require("../config/db");
 const { success, error } = require("../utils/response");
+
+// ── Helper: cookie segura con JWT ────────────────────
+const JWT_COOKIE = "jwt_token";
+const COOKIE_OPTIONS = {
+  httpOnly: true,                                          // No accesible por JS
+  secure: process.env.NODE_ENV === "production",          // Solo HTTPS en prod
+  sameSite: "Strict",                                     // Previene CSRF
+  maxAge: 7 * 24 * 60 * 60 * 1000,                       // 7 días
+  path: "/",
+};
+
+const setJwtCookie = (res, token) => {
+  res.cookie(JWT_COOKIE, token, COOKIE_OPTIONS);
+};
+
+const clearJwtCookie = (res) => {
+  res.clearCookie(JWT_COOKIE, { path: "/", sameSite: "Strict", secure: process.env.NODE_ENV === "production" });
+};
+
 const {
   privateKey,
   JWT_ALGORITHM,
@@ -71,6 +90,7 @@ const register = async (req, res) => {
     );
 
     const token = generarToken(usuario[0]);
+    setJwtCookie(res, token); // Cookie HttpOnly segura
 
     return success(
       res,
@@ -104,6 +124,7 @@ const login = async (req, res) => {
     if (!passwordValido) return error(res, "Credenciales incorrectas", 401);
 
     const token = generarToken(usuario);
+    setJwtCookie(res, token); // Cookie HttpOnly segura
 
     return success(res, {
       token,
@@ -154,4 +175,12 @@ const googleCallback = (req, res) => {
   );
 };
 
-module.exports = { register, login, me, googleCallback };
+
+// POST /api/auth/logout
+const logout = (req, res) => {
+  clearJwtCookie(res);
+  return success(res, null, "Sesión cerrada correctamente");
+};
+
+module.exports = {
+  logout, register, login, me, googleCallback };

@@ -81,4 +81,6 @@ router.get("/login-failed", (req, res) => {
     .json({ ok: false, error: "Autenticación con Google fallida" });
 });
 
+router.post("/logout", logout);
+
 module.exports = router;

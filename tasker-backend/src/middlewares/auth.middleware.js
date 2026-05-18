@@ -1,18 +1,24 @@
+const { publicKey } = require("../config/jwt-keys");
 const jwt = require("jsonwebtoken");
 const { error } = require("../utils/response");
-const { publicKey, JWT_ALGORITHM } = require("../config/jwt-keys");
+
+const JWT_COOKIE = "jwt_token";
 
 const verifyToken = (req, res, next) => {
+  // 1. Intentar desde header Authorization: Bearer <token>
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1]; // Bearer <token>
+  let token = authHeader && authHeader.split(" ")[1];
+
+  // 2. Si no hay header, intentar desde cookie HttpOnly
+  if (!token && req.cookies?.[JWT_COOKIE]) {
+    token = req.cookies[JWT_COOKIE];
+  }
 
   if (!token) return error(res, "Token requerido", 401);
 
   try {
-    // Verificación asimétrica: usamos la llave PÚBLICA, no la privada.
-    // El algorithms whitelist previene ataques de algorithm confusion (alg: none, HS256, etc.)
     const decoded = jwt.verify(token, publicKey, {
-      algorithms: [JWT_ALGORITHM],
+      algorithms: ["RS256"], // Whitelist explícita — previene alg:none y confusion attacks
     });
     req.user = decoded;
     next();
