@@ -10,6 +10,7 @@ const { generarCsrfToken, verifyCsrf } = require("./middlewares/csrf.middleware"
 const cookieParser = require("cookie-parser");
 
 const app = express();
+app.set("trust proxy", 1); // Necesario para Railway/proxies
 
 app.use(helmet());
 app.use(hpp());
