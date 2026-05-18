@@ -18,7 +18,9 @@ app.use(passport.initialize());
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:4173",
   process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_2,
 ].filter(Boolean);
 
 app.use(
