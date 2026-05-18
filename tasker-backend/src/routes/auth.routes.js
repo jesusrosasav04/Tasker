@@ -4,6 +4,7 @@ const {
   register,
   login,
   me,
+  logout,
   googleCallback,
 } = require("../controllers/auth.controller");
 const { verifyToken } = require("../middlewares/auth.middleware");
