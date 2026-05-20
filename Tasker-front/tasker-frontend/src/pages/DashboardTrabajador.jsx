@@ -153,10 +153,11 @@ function ModalPostularse({ tarea, onClose, onSuccess }) {
 
 // ── Tab: Tareas disponibles ───────────────────────────
 function TabDisponibles({ postuladas, onPostular }) {
-  const [tareas, setTareas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [hayMas, setHayMas] = useState(false);
+  const [tareas, setTareas]       = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [page, setPage]           = useState(1);
+  const [hayMas, setHayMas]       = useState(false);
+  const [verificado, setVerificado] = useState(true);
 
   useEffect(() => {
     setLoading(true);
@@ -166,12 +167,29 @@ function TabDisponibles({ postuladas, onPostular }) {
         const data = r.data.data?.tareas || [];
         setTareas((prev) => (page === 1 ? data : [...prev, ...data]));
         setHayMas(data.length === 20);
+        if (r.data.data?.verificado !== undefined) {
+          setVerificado(r.data.data.verificado);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [page]);
 
   if (loading && page === 1) return <Spinner />;
+
+  if (!verificado)
+    return (
+      <div className="text-center py-16 px-6">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 mx-auto mb-4">
+          <span className="text-3xl">⏳</span>
+        </div>
+        <p className="text-gray-900 font-semibold text-lg">Perfil pendiente de verificación</p>
+        <p className="text-gray-500 text-sm mt-2 max-w-sm mx-auto">
+          Un administrador debe aprobar tu perfil antes de que puedas postularte a tareas.
+          Recibirás una notificación cuando sea aprobado.
+        </p>
+      </div>
+    );
 
   if (tareas.length === 0)
     return (

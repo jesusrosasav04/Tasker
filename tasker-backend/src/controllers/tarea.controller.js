@@ -104,12 +104,20 @@ const misTareas = async (req, res) => {
 
 // GET /api/tareas/disponibles — feed para trabajadores
 const tareasDisponibles = async (req, res) => {
-  // Paginación opcional: ?page=1&limit=20
+  const usuario_id = req.user.id;
   const page = Math.max(1, parseInt(req.query.page) || 1);
-  const limit = Math.min(50, parseInt(req.query.limit) || 20); // máximo 50 por página
+  const limit = Math.min(50, parseInt(req.query.limit) || 20);
   const offset = (page - 1) * limit;
 
   try {
+    // Verificar que el trabajador está aprobado
+    const [perfil] = await pool.query(
+      "SELECT verificado FROM trabajador WHERE usuario_id = ?",
+      [usuario_id]
+    );
+
+    const verificado = perfil[0]?.verificado === 1;
+
     const [tareas] = await pool.query(
       `SELECT 
          t.id, t.titulo, t.descripcion, t.presupuesto,
@@ -126,7 +134,7 @@ const tareasDisponibles = async (req, res) => {
       [limit, offset],
     );
 
-    return success(res, { tareas, page, limit });
+    return success(res, { tareas, page, limit, verificado });
   } catch (err) {
     console.error(err);
     return error(res, "Error al obtener tareas disponibles", 500);
@@ -286,4 +294,83 @@ const actualizarTarea = async (req, res) => {
   }
 };
 
-module.exports = { crearTarea, misTareas, tareasDisponibles, completarTarea, getTareaById, actualizarTarea };
+
+// PATCH /api/tareas/:id/cancelar — cliente cancela su tarea
+const cancelarTarea = async (req, res) => {
+  const cliente_id = req.user.id;
+  const { id } = req.params;
+  const { motivo } = req.body; // opcional
+
+  try {
+    const [tareas] = await pool.query(
+      "SELECT id, estado, cliente_id FROM tareas WHERE id = ? AND cliente_id = ?",
+      [id, cliente_id]
+    );
+
+    if (tareas.length === 0)
+      return error(res, "Tarea no encontrada o no tienes permiso", 404);
+
+    if (tareas[0].estado === "completada")
+      return error(res, "No puedes cancelar una tarea ya completada", 400);
+
+    if (tareas[0].estado === "cancelada")
+      return error(res, "Esta tarea ya fue cancelada", 400);
+
+    await pool.query("UPDATE tareas SET estado = 'cancelada' WHERE id = ?", [id]);
+
+    // Notificar al trabajador asignado si había uno
+    const [asignado] = await pool.query(
+      "SELECT trabajador_id FROM tareas WHERE id = ?", [id]
+    );
+    if (asignado[0]?.trabajador_id) {
+      const { crearNotificacion } = require("./notificacion.controller");
+      const msg = motivo
+        ? `El cliente canceló la tarea #${id}. Motivo: ${motivo}`
+        : `El cliente canceló la tarea #${id}`;
+      crearNotificacion(asignado[0].trabajador_id, msg);
+    }
+
+    return success(res, null, "Tarea cancelada correctamente");
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al cancelar la tarea", 500);
+  }
+};
+
+// POST /api/tareas/:id/reportar — cliente reporta que el trabajador no llegó
+const reportarTarea = async (req, res) => {
+  const cliente_id = req.user.id;
+  const { id } = req.params;
+  const { motivo } = req.body;
+
+  try {
+    const [tareas] = await pool.query(
+      "SELECT id, estado, cliente_id, trabajador_id FROM tareas WHERE id = ? AND cliente_id = ?",
+      [id, cliente_id]
+    );
+
+    if (tareas.length === 0)
+      return error(res, "Tarea no encontrada o no tienes permiso", 404);
+
+    if (tareas[0].estado !== "en_progreso")
+      return error(res, "Solo puedes reportar tareas que están en progreso", 400);
+
+    const { crearNotificacion } = require("./notificacion.controller");
+
+    // Notificar a admins (en este caso notificamos con usuario_id de los admins)
+    const [admins] = await pool.query(
+      `SELECT u.id FROM usuarios u JOIN roles r ON u.role_id = r.id WHERE r.nombre = 'admin'`
+    );
+    const mensaje = `Reporte en tarea #${id}: ${motivo || "El trabajador no se presentó"}`;
+    for (const admin of admins) {
+      crearNotificacion(admin.id, mensaje);
+    }
+
+    return success(res, null, "Reporte enviado. Un administrador lo revisará pronto.");
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al enviar el reporte", 500);
+  }
+};
+
+module.exports = { crearTarea, misTareas, tareasDisponibles, completarTarea, getTareaById, actualizarTarea, cancelarTarea, reportarTarea };

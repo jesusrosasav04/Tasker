@@ -26,6 +26,18 @@ const crearPostulacion = async (req, res) => {
       return error(res, "La tarea ya no está disponible", 400);
     }
 
+    // Verificar que el trabajador está aprobado por un admin
+    const [perfil] = await pool.query(
+      "SELECT id, verificado FROM trabajador WHERE usuario_id = ?",
+      [trabajador_id]
+    );
+
+    if (perfil.length === 0)
+      return error(res, "No tienes un perfil de trabajador registrado", 400);
+
+    if (!perfil[0].verificado)
+      return error(res, "Tu perfil aún no ha sido aprobado por un administrador. Por favor espera la verificación.", 403);
+
     // Evitar postulación duplicada
     const [existe] = await pool.query(
       `SELECT id FROM postulaciones WHERE tarea_id = ? AND trabajador_id = ?`,

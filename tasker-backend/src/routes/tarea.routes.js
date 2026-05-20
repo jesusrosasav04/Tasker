@@ -1,11 +1,8 @@
 const router = require("express").Router();
 const {
-  crearTarea,
-  misTareas,
-  tareasDisponibles,
-  completarTarea,
-  getTareaById,
-  actualizarTarea,
+  crearTarea, misTareas, tareasDisponibles,
+  completarTarea, getTareaById, actualizarTarea,
+  cancelarTarea, reportarTarea,
 } = require("../controllers/tarea.controller");
 const { verifyToken, verifyRole } = require("../middlewares/auth.middleware");
 const validate = require("../middlewares/validate.middleware");
@@ -49,6 +46,10 @@ router.get("/mis-tareas", verifyToken, verifyRole("cliente"), misTareas);
 router.get("/disponibles", verifyToken, verifyRole("trabajador"), tareasDisponibles);
 router.patch("/:id/completar", verifyToken, verifyRole("cliente"),
   param("id").isInt({ min: 1 }), validate, completarTarea);
+router.patch("/:id/cancelar", verifyToken, verifyRole("cliente"),
+  param("id").isInt({ min: 1 }), validate, cancelarTarea);
+router.post("/:id/reportar", verifyToken, verifyRole("cliente"),
+  param("id").isInt({ min: 1 }), validate, reportarTarea);
 router.put("/:id", verifyToken, verifyRole("cliente"),
   param("id").isInt({ min: 1 }), validate, actualizarTarea);
 router.get("/:id", verifyToken,

@@ -1,8 +1,117 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, ClipboardList, Clock, CheckCircle, Users, Star, X, AlertTriangle, MessageSquare, Pencil } from "lucide-react";
+import { Plus, ClipboardList, Clock, CheckCircle, Users, Star, X, AlertTriangle, MessageSquare, Pencil, HelpCircle, Ban, Flag } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
+
+// ── Modal ayuda (cancelar / reportar) ─────────────────
+function ModalAyuda({ tarea, onClose, onCancelada }) {
+  const [vista, setVista]       = useState("menu"); // menu | cancelar | reportar
+  const [motivo, setMotivo]     = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [errMsg, setErrMsg]     = useState("");
+  const [exito, setExito]       = useState("");
+
+  const handleCancelar = async () => {
+    setLoading(true); setErrMsg("");
+    try {
+      await api.patch(`/tareas/${tarea.id}/cancelar`, { motivo: motivo || undefined });
+      setExito("Tarea cancelada correctamente.");
+      setTimeout(() => { onCancelada(tarea.id); onClose(); }, 1500);
+    } catch (err) {
+      setErrMsg(err.response?.data?.error || "Error al cancelar la tarea");
+    } finally { setLoading(false); }
+  };
+
+  const handleReportar = async () => {
+    if (!motivo.trim()) { setErrMsg("Describe brevemente el problema"); return; }
+    setLoading(true); setErrMsg("");
+    try {
+      await api.post(`/tareas/${tarea.id}/reportar`, { motivo });
+      setExito("Reporte enviado. Un administrador lo revisará pronto.");
+      setTimeout(onClose, 2000);
+    } catch (err) {
+      setErrMsg(err.response?.data?.error || "Error al enviar el reporte");
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h3 className="font-semibold text-gray-900">
+            {vista === "menu" ? "¿Necesitas ayuda?" : vista === "cancelar" ? "Cancelar tarea" : "Reportar problema"}
+          </h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {exito ? (
+            <div className="text-center py-4">
+              <CheckCircle className="h-10 w-10 text-emerald-500 mx-auto mb-3" />
+              <p className="text-sm font-medium text-gray-900">{exito}</p>
+            </div>
+          ) : vista === "menu" ? (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-500 mb-4">
+                Tarea: <span className="font-medium text-gray-900">"{tarea.titulo}"</span>
+              </p>
+              <button onClick={() => { setVista("reportar"); setMotivo(""); setErrMsg(""); }}
+                className="w-full flex items-center gap-3 border border-amber-200 bg-amber-50 text-amber-700 px-4 py-3 rounded-xl text-sm font-medium hover:bg-amber-100 transition">
+                <Flag className="h-5 w-5 flex-shrink-0" />
+                <div className="text-left">
+                  <p className="font-semibold">Reportar problema</p>
+                  <p className="text-xs text-amber-600 font-normal mt-0.5">El trabajador no se presentó u otro problema</p>
+                </div>
+              </button>
+              <button onClick={() => { setVista("cancelar"); setMotivo(""); setErrMsg(""); }}
+                className="w-full flex items-center gap-3 border border-red-200 bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm font-medium hover:bg-red-100 transition">
+                <Ban className="h-5 w-5 flex-shrink-0" />
+                <div className="text-left">
+                  <p className="font-semibold">Cancelar tarea</p>
+                  <p className="text-xs text-red-500 font-normal mt-0.5">Cancelar definitivamente esta tarea</p>
+                </div>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                {vista === "cancelar"
+                  ? "¿Estás seguro de que quieres cancelar esta tarea? Esta acción no se puede deshacer."
+                  : "Describe el problema que tienes con el trabajador:"}
+              </p>
+              <textarea rows={3} value={motivo} onChange={(e) => setMotivo(e.target.value)}
+                placeholder={vista === "cancelar"
+                  ? "Motivo de cancelación (opcional)..."
+                  : "Ej: El trabajador no se presentó a la hora acordada..."}
+                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-none" />
+              {errMsg && (
+                <p className="text-xs text-red-500 flex items-center gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5" />{errMsg}
+                </p>
+              )}
+              <div className="flex gap-3">
+                <button onClick={() => { setVista("menu"); setErrMsg(""); }}
+                  className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition">
+                  Atrás
+                </button>
+                <button onClick={vista === "cancelar" ? handleCancelar : handleReportar}
+                  disabled={loading}
+                  className={`flex-1 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50 ${
+                    vista === "cancelar" ? "bg-red-500 hover:bg-red-600" : "bg-amber-500 hover:bg-amber-600"
+                  }`}>
+                  {loading ? "Enviando..." : vista === "cancelar" ? "Sí, cancelar" : "Enviar reporte"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Modal confirmar completar ─────────────────────────
 function ModalCompletar({ tarea, onClose, onConfirmar }) {
@@ -165,11 +274,13 @@ function ModalCalificar({ tarea, onClose, onCalificado }) {
 // ── Dashboard cliente ─────────────────────────────────
 export default function DashboardCliente() {
   const { user }  = useAuth();
-  const [tareas, setTareas]           = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [modalTarea, setModalTarea]   = useState(null);
+  const [tareas, setTareas]                 = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [modalTarea, setModalTarea]         = useState(null);
   const [modalCompletar, setModalCompletar] = useState(null);
-  const [calificadas, setCalificadas] = useState(new Set());
+  const [modalAyuda, setModalAyuda]         = useState(null);
+  const [calificadas, setCalificadas]       = useState(new Set());
+  const [filtro, setFiltro]                 = useState("todas");
 
   useEffect(() => {
     api.get("/tareas/mis-tareas")
@@ -216,6 +327,12 @@ export default function DashboardCliente() {
     }
   };
 
+  const handleCancelada = (tarea_id) => {
+    setTareas((prev) =>
+      prev.map((t) => t.id === tarea_id ? { ...t, estado: "cancelada" } : t)
+    );
+  };
+
   return (
     <div className="flex-1 bg-gray-50 px-4 py-8 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -260,6 +377,34 @@ export default function DashboardCliente() {
             </Link>
           </div>
 
+          {/* Filtros */}
+          {!loading && tareas.length > 0 && (
+            <div className="px-6 py-3 border-b border-gray-100 flex gap-2 overflow-x-auto">
+              {[
+                { key: "todas",      label: "Todas",       count: tareas.length },
+                { key: "pendiente",  label: "Pendientes",  count: tareas.filter(t => t.estado === "pendiente").length },
+                { key: "en_progreso",label: "En progreso", count: tareas.filter(t => t.estado === "en_progreso").length },
+                { key: "completada", label: "Completadas", count: tareas.filter(t => t.estado === "completada").length },
+                { key: "cancelada",  label: "Canceladas",  count: tareas.filter(t => t.estado === "cancelada").length },
+              ].filter(f => f.key === "todas" || f.count > 0).map((f) => (
+                <button key={f.key} onClick={() => setFiltro(f.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition ${
+                    filtro === f.key
+                      ? "text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                  style={filtro === f.key ? { backgroundColor: "#10b981" } : {}}>
+                  {f.label}
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                    filtro === f.key ? "bg-white/20 text-white" : "bg-gray-200 text-gray-600"
+                  }`}>
+                    {f.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
           {loading ? (
             <div className="flex justify-center py-16">
               <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
@@ -278,7 +423,9 @@ export default function DashboardCliente() {
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {tareas.map((t) => {
+              {tareas
+                .filter((t) => filtro === "todas" || t.estado === filtro)
+                .map((t) => {
                 const yaCalificada = calificadas.has(t.id) || t.calificada;
                 return (
                   <div key={t.id}
@@ -304,8 +451,16 @@ export default function DashboardCliente() {
                           Editar
                         </Link>
                       )}
-                      {/* Botón completar — solo tareas en_progreso */}
+                      {/* Botón ayuda — solo tareas en_progreso */}
                       {t.estado === "en_progreso" && (
+                        <button
+                          onClick={() => setModalAyuda(t)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" />
+                          Ayuda
+                        </button>
+                      )}
                         <button
                           onClick={() => setModalCompletar(t)}
                           className="flex items-center gap-1.5 text-xs font-medium text-green-600 border border-green-200 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition"
@@ -370,6 +525,15 @@ export default function DashboardCliente() {
           tarea={modalCompletar}
           onClose={() => setModalCompletar(null)}
           onConfirmar={handleCompletar}
+        />
+      )}
+
+      {/* Modal ayuda */}
+      {modalAyuda && (
+        <ModalAyuda
+          tarea={modalAyuda}
+          onClose={() => setModalAyuda(null)}
+          onCancelada={handleCancelada}
         />
       )}
     </div>
