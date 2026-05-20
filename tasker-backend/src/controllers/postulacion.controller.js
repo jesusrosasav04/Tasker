@@ -99,8 +99,9 @@ const postulacionesPorTarea = async (req, res) => {
 
     const [postulaciones] = await pool.query(
       `SELECT p.id, p.mensaje, p.precio_propuesto, p.estado, p.created_at,
+              p.trabajador_id,
               u.nombre AS trabajador_nombre, u.email AS trabajador_email,
-              tr.descripcion AS trabajador_bio, tr.calificacion_promedio
+              tr.id AS trabajador_perfil_id, tr.descripcion AS trabajador_bio, tr.calificacion_promedio
        FROM postulaciones p
        JOIN usuarios u ON p.trabajador_id = u.id
        JOIN trabajador tr ON p.trabajador_id = tr.usuario_id

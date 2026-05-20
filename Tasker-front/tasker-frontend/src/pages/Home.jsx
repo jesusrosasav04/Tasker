@@ -3,6 +3,32 @@ import { Link } from "react-router-dom";
 import { Search, ArrowRight, Star } from "lucide-react";
 import api from "../api/axios";
 
+// ── Mapa de iconos por categoría ─────────────────────
+const ICONOS_CATEGORIA = {
+  "plomería": "🔧", "plomeria": "🔧", "fontanería": "🔧",
+  "electricidad": "⚡", "eléctrica": "⚡", "electrica": "⚡",
+  "limpieza": "🧹", "aseo": "🧹",
+  "carpintería": "🪵", "carpinteria": "🪵", "madera": "🪵", "muebles": "🛋️",
+  "jardinería": "🌿", "jardineria": "🌿", "jardín": "🌿", "plantas": "🌱",
+  "pintura": "🎨", "pintor": "🎨",
+  "mudanzas": "📦", "mudanza": "📦", "transporte": "🚛",
+  "tecnología": "💻", "tecnologia": "💻", "computadoras": "💻",
+  "cocina": "🍳", "chef": "👨‍🍳",
+  "seguridad": "🔒", "cerrajería": "🔑", "cerrajeria": "🔑",
+  "climatización": "❄️", "climatizacion": "❄️", "aire": "❄️",
+  "construcción": "🏗️", "construccion": "🏗️", "albañilería": "🧱",
+  "hogar": "🏠", "otros": "🛠️",
+};
+
+const getIconoCategoria = (nombre) => {
+  if (!nombre) return "🛠️";
+  const key = nombre.toLowerCase();
+  for (const [k, v] of Object.entries(ICONOS_CATEGORIA)) {
+    if (key.includes(k)) return v;
+  }
+  return "🛠️";
+};
+
 function Avatar({ nombre }) {
   const initials = nombre?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "T";
   const palettes = [
@@ -89,7 +115,7 @@ export default function Home() {
                   className="flex flex-col items-center rounded-2xl border-2 border-transparent bg-white p-6 text-center transition-all hover:border-gray-200 hover:shadow-md">
                   <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
                     style={{ backgroundColor: "#f0fdf4" }}>
-                    <span className="text-2xl">🔧</span>
+                    <span className="text-2xl">{getIconoCategoria(cat.nombre)}</span>
                   </div>
                   <h3 className="font-semibold text-gray-900 text-sm">{cat.nombre}</h3>
                 </Link>

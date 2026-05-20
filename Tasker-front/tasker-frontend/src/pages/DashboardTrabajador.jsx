@@ -285,13 +285,13 @@ function TabMisPostulaciones() {
                 {p.categoria} ·{" "}
                 {new Date(p.created_at).toLocaleDateString("es-MX")}
               </p>
-              {p.precio_propuesto && (
+              {p.precio_propuesto && p.estado !== "rechazada" && (
                 <p className="text-sm text-emerald-600 font-medium mt-1">
                   Tu oferta: $
                   {Number(p.precio_propuesto).toLocaleString("es-MX")}
                 </p>
               )}
-              {p.mensaje && (
+              {p.mensaje && p.estado !== "rechazada" && (
                 <p className="text-sm text-gray-500 mt-1 line-clamp-1">
                   "{p.mensaje}"
                 </p>
@@ -307,11 +307,14 @@ function TabMisPostulaciones() {
                     ? "Rechazada"
                     : "Pendiente"}
               </span>
-              <span
-                className={`text-xs px-2.5 py-1 rounded-full ${estadoTareaStyle[p.tarea_estado] || "bg-gray-100 text-gray-500"}`}
-              >
-                Tarea: {p.tarea_estado?.replace("_", " ")}
-              </span>
+              {/* Solo mostrar estado de tarea si la postulación NO fue rechazada */}
+              {p.estado !== "rechazada" && (
+                <span
+                  className={`text-xs px-2.5 py-1 rounded-full ${estadoTareaStyle[p.tarea_estado] || "bg-gray-100 text-gray-500"}`}
+                >
+                  Tarea: {p.tarea_estado?.replace("_", " ")}
+                </span>
+              )}
             </div>
           </div>
         </div>

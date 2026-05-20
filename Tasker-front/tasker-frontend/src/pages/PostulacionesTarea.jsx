@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, User, DollarSign, MessageSquare, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, User, DollarSign, MessageSquare, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import api from "../api/axios";
 
 export default function PostulacionesTarea() {
@@ -140,6 +140,16 @@ export default function PostulacionesTarea() {
                             <p className="text-xs text-amber-600 mt-0.5">
                               ⭐ {Number(p.calificacion_promedio).toFixed(1)}
                             </p>
+                          )}
+                          {(p.trabajador_perfil_id || p.trabajador_id) && (
+                            <Link
+                              to={`/trabajador/${p.trabajador_perfil_id || p.trabajador_id}`}
+                              className="inline-flex items-center gap-1 text-xs font-medium mt-1.5 hover:underline"
+                              style={{ color: "#10b981" }}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Ver perfil del especialista
+                            </Link>
                           )}
                         </div>
                       </div>
