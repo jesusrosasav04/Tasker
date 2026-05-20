@@ -13,6 +13,7 @@ import PublicarSolicitud from "./pages/PublicarSolicitud";
 import DashboardCliente from "./pages/DashboardCliente";
 import DashboardTrabajador from "./pages/DashboardTrabajador";
 import NuevaTarea from "./pages/NuevaTarea";
+import EditarTarea from "./pages/EditarTarea";
 import PostulacionesTarea from "./pages/PostulacionesTarea";
 import EditarPerfilTrabajador from "./pages/EditarPerfilTrabajador";
 import Chat from "./pages/Chat";
@@ -52,6 +53,14 @@ function App() {
           element={
             <ProtectedRoute roles={["cliente"]}>
               <NuevaTarea />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/cliente/tareas/:id/editar"
+          element={
+            <ProtectedRoute roles={["cliente"]}>
+              <EditarTarea />
             </ProtectedRoute>
           }
         />

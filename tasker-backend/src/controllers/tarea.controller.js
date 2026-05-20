@@ -229,4 +229,61 @@ const getTareaById = async (req, res) => {
   }
 };
 
-module.exports = { crearTarea, misTareas, tareasDisponibles, completarTarea, getTareaById };
+
+// PUT /api/tareas/:id — cliente edita su tarea (solo si está pendiente)
+const actualizarTarea = async (req, res) => {
+  const cliente_id = req.user.id;
+  const { id } = req.params;
+  const { titulo, descripcion, categoria_id, presupuesto, ubicacion, latitud, longitud } = req.body;
+
+  try {
+    const [tareas] = await pool.query(
+      "SELECT id, estado, cliente_id FROM tareas WHERE id = ? AND cliente_id = ?",
+      [id, cliente_id]
+    );
+
+    if (tareas.length === 0)
+      return error(res, "Tarea no encontrada o no tienes permiso", 404);
+
+    if (tareas[0].estado !== "pendiente")
+      return error(res, "Solo puedes editar tareas que aún no han sido aceptadas", 400);
+
+    await pool.query(
+      `UPDATE tareas SET
+        titulo       = COALESCE(?, titulo),
+        descripcion  = COALESCE(?, descripcion),
+        categoria_id = COALESCE(?, categoria_id),
+        presupuesto  = COALESCE(?, presupuesto),
+        ubicacion    = COALESCE(?, ubicacion),
+        latitud      = COALESCE(?, latitud),
+        longitud     = COALESCE(?, longitud)
+       WHERE id = ?`,
+      [
+        titulo?.trim()      || null,
+        descripcion?.trim() || null,
+        categoria_id        || null,
+        presupuesto         || null,
+        ubicacion?.trim()   || null,
+        latitud             || null,
+        longitud            || null,
+        id,
+      ]
+    );
+
+    const [actualizada] = await pool.query(
+      `SELECT t.id, t.titulo, t.descripcion, t.presupuesto,
+              t.ubicacion, t.latitud, t.longitud, t.estado,
+              c.nombre AS categoria
+       FROM tareas t JOIN categorias c ON t.categoria_id = c.id
+       WHERE t.id = ?`,
+      [id]
+    );
+
+    return success(res, actualizada[0], "Tarea actualizada correctamente");
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al actualizar la tarea", 500);
+  }
+};
+
+module.exports = { crearTarea, misTareas, tareasDisponibles, completarTarea, getTareaById, actualizarTarea };

@@ -1,8 +1,49 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, ClipboardList, Clock, CheckCircle, Users, Star, X, AlertTriangle, MessageSquare } from "lucide-react";
+import { Plus, ClipboardList, Clock, CheckCircle, Users, Star, X, AlertTriangle, MessageSquare, Pencil } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
+
+// ── Modal confirmar completar ─────────────────────────
+function ModalCompletar({ tarea, onClose, onConfirmar }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleConfirmar = async () => {
+    setLoading(true);
+    await onConfirmar(tarea.id);
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50 mx-auto mb-4">
+          <CheckCircle className="h-7 w-7 text-emerald-500" />
+        </div>
+        <h3 className="font-bold text-gray-900 text-center text-lg mb-2">
+          ¿Marcar como completada?
+        </h3>
+        <p className="text-sm text-gray-500 text-center mb-2">
+          Vas a marcar la tarea <span className="font-medium text-gray-900">"{tarea.titulo}"</span> como completada.
+        </p>
+        <p className="text-xs text-amber-600 text-center bg-amber-50 rounded-lg px-3 py-2 mb-5">
+          ⚠️ Esta acción no se puede deshacer. Asegúrate de que el trabajo fue realizado correctamente.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onClose}
+            className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition">
+            Cancelar
+          </button>
+          <button onClick={handleConfirmar} disabled={loading}
+            style={{ backgroundColor: "#10b981" }}
+            className="flex-1 text-white py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition disabled:opacity-50">
+            {loading ? "Procesando..." : "Sí, completar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Modal calificar ───────────────────────────────────
 function ModalCalificar({ tarea, onClose, onCalificado }) {
@@ -127,7 +168,7 @@ export default function DashboardCliente() {
   const [tareas, setTareas]           = useState([]);
   const [loading, setLoading]         = useState(true);
   const [modalTarea, setModalTarea]   = useState(null);
-  // Set de tarea ids ya calificadas
+  const [modalCompletar, setModalCompletar] = useState(null);
   const [calificadas, setCalificadas] = useState(new Set());
 
   useEffect(() => {
@@ -168,8 +209,10 @@ export default function DashboardCliente() {
       setTareas((prev) =>
         prev.map((t) => t.id === tarea_id ? { ...t, estado: "completada" } : t)
       );
+      setModalCompletar(null);
     } catch (err) {
       alert(err.response?.data?.error || "Error al completar la tarea");
+      setModalCompletar(null);
     }
   };
 
@@ -251,10 +294,20 @@ export default function DashboardCliente() {
                       <span className={`text-xs font-medium px-3 py-1 rounded-full ${estadoColor[t.estado] || "bg-gray-100 text-gray-600"}`}>
                         {estadoLabel[t.estado] || t.estado}
                       </span>
+                      {/* Botón editar — solo tareas pendientes */}
+                      {t.estado === "pendiente" && (
+                        <Link
+                          to={`/dashboard/cliente/tareas/${t.id}/editar`}
+                          className="flex items-center gap-1.5 text-xs font-medium text-blue-600 border border-blue-200 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Editar
+                        </Link>
+                      )}
                       {/* Botón completar — solo tareas en_progreso */}
                       {t.estado === "en_progreso" && (
                         <button
-                          onClick={() => handleCompletar(t.id)}
+                          onClick={() => setModalCompletar(t)}
                           className="flex items-center gap-1.5 text-xs font-medium text-green-600 border border-green-200 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition"
                         >
                           <CheckCircle className="h-3.5 w-3.5" />
@@ -308,6 +361,15 @@ export default function DashboardCliente() {
           tarea={modalTarea}
           onClose={() => setModalTarea(null)}
           onCalificado={handleCalificado}
+        />
+      )}
+
+      {/* Modal confirmar completar */}
+      {modalCompletar && (
+        <ModalCompletar
+          tarea={modalCompletar}
+          onClose={() => setModalCompletar(null)}
+          onConfirmar={handleCompletar}
         />
       )}
     </div>
