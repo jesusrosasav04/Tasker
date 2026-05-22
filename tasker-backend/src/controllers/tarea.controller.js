@@ -343,6 +343,9 @@ const reportarTarea = async (req, res) => {
   const { id } = req.params;
   const { motivo } = req.body;
 
+  if (!motivo?.trim())
+    return error(res, "Describe brevemente el problema", 400);
+
   try {
     const [tareas] = await pool.query(
       "SELECT id, estado, cliente_id, trabajador_id FROM tareas WHERE id = ? AND cliente_id = ?",
@@ -355,15 +358,19 @@ const reportarTarea = async (req, res) => {
     if (tareas[0].estado !== "en_progreso")
       return error(res, "Solo puedes reportar tareas que están en progreso", 400);
 
-    const { crearNotificacion } = require("./notificacion.controller");
+    // Guardar reporte en la tabla reportes
+    await pool.query(
+      `INSERT INTO reportes (tarea_id, cliente_id, motivo) VALUES (?, ?, ?)`,
+      [id, cliente_id, motivo.trim()]
+    );
 
-    // Notificar a admins (en este caso notificamos con usuario_id de los admins)
+    // Notificar a admins
+    const { crearNotificacion } = require("./notificacion.controller");
     const [admins] = await pool.query(
       `SELECT u.id FROM usuarios u JOIN roles r ON u.role_id = r.id WHERE r.nombre = 'admin'`
     );
-    const mensaje = `Reporte en tarea #${id}: ${motivo || "El trabajador no se presentó"}`;
     for (const admin of admins) {
-      crearNotificacion(admin.id, mensaje);
+      crearNotificacion(admin.id, `Nuevo reporte en tarea #${id}: ${motivo.trim()}`);
     }
 
     return success(res, null, "Reporte enviado. Un administrador lo revisará pronto.");

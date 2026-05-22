@@ -10,6 +10,9 @@ const {
   getTareaDetalle,
   eliminarTarea,
   cambiarEstadoTarea,
+  getReportes,
+  actualizarReporte,
+  cancelarTareaAdmin,
 } = require("../controllers/admin.controller");
 const {
   getAllAdmin,
@@ -87,5 +90,10 @@ router.post("/categorias", categoriaRules, validate, crear);
 router.put("/categorias/:id", idParamRule, categoriaUpdateRules, validate, actualizar);
 router.patch("/categorias/:id/estado", idParamRule, validate, toggleEstado);
 router.delete("/categorias/:id", idParamRule, validate, eliminar);
+
+// ── Reportes ──────────────────────────────────────────
+router.get("/reportes", getReportes);
+router.patch("/reportes/:id", idParamRule, validate, actualizarReporte);
+router.patch("/tareas/:id/cancelar", idParamRule, validate, cancelarTareaAdmin);
 
 module.exports = router;

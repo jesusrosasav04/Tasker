@@ -428,6 +428,73 @@ const getUsuarioDetalle = async (req, res) => {
   }
 };
 
+// GET /api/admin/reportes — Ver todos los reportes
+const getReportes = async (req, res) => {
+  try {
+    const [reportes] = await db.query(
+      `SELECT
+        r.id, r.motivo, r.estado, r.resolucion, r.created_at,
+        t.id AS tarea_id, t.titulo AS tarea_titulo, t.estado AS tarea_estado,
+        u.nombre AS cliente_nombre, u.email AS cliente_email
+       FROM reportes r
+       JOIN tareas t ON r.tarea_id = t.id
+       JOIN usuarios u ON r.cliente_id = u.id
+       ORDER BY r.created_at DESC`
+    );
+    return success(res, reportes);
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al obtener reportes", 500);
+  }
+};
+
+// PATCH /api/admin/reportes/:id — Actualizar estado de un reporte
+const actualizarReporte = async (req, res) => {
+  const { id } = req.params;
+  const { estado, resolucion } = req.body;
+
+  try {
+    await db.query(
+      "UPDATE reportes SET estado = ?, resolucion = ? WHERE id = ?",
+      [estado || "revisado", resolucion?.trim() || null, id]
+    );
+    return success(res, null, "Reporte actualizado correctamente");
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al actualizar reporte", 500);
+  }
+};
+
+// PATCH /api/admin/tareas/:id/cancelar — Admin cancela una tarea
+const cancelarTareaAdmin = async (req, res) => {
+  const { id } = req.params;
+  const { motivo } = req.body;
+
+  try {
+    const [tareas] = await db.query("SELECT id, estado FROM tareas WHERE id = ?", [id]);
+    if (tareas.length === 0) return error(res, "Tarea no encontrada", 404);
+    if (tareas[0].estado === "cancelada") return error(res, "La tarea ya está cancelada", 400);
+
+    await db.query("UPDATE tareas SET estado = 'cancelada' WHERE id = ?", [id]);
+
+    // Notificar al cliente
+    const [tarea] = await db.query(
+      "SELECT cliente_id, trabajador_id, titulo FROM tareas WHERE id = ?", [id]
+    );
+    const { crearNotificacion } = require("./notificacion.controller");
+    const msg = motivo
+      ? `Un administrador canceló tu tarea "${tarea[0]?.titulo}". Motivo: ${motivo}`
+      : `Un administrador canceló tu tarea "${tarea[0]?.titulo}"`;
+    crearNotificacion(tarea[0]?.cliente_id, msg);
+    if (tarea[0]?.trabajador_id) crearNotificacion(tarea[0].trabajador_id, msg);
+
+    return success(res, null, "Tarea cancelada correctamente");
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al cancelar la tarea", 500);
+  }
+};
+
 module.exports = {
   getUsuarios,
   toggleEstadoUsuario,
@@ -439,4 +506,7 @@ module.exports = {
   getTareaDetalle,
   eliminarTarea,
   cambiarEstadoTarea,
+  getReportes,
+  actualizarReporte,
+  cancelarTareaAdmin,
 };

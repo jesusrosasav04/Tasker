@@ -461,6 +461,8 @@ export default function DashboardCliente() {
                           Ayuda
                         </button>
                       )}
+                      {/* Botón completar — SOLO tareas en_progreso */}
+                      {t.estado === "en_progreso" && (
                         <button
                           onClick={() => setModalCompletar(t)}
                           className="flex items-center gap-1.5 text-xs font-medium text-green-600 border border-green-200 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition"
