@@ -9,7 +9,7 @@ import AdminLayout from "./AdminLayout";
 
 // ── Constantes ────────────────────────────────────────
 const ESTADOS = [
-  { value: "",            label: "Todos" },
+  { value: "",        label: "Todos" },
   { value: "pendiente",   label: "Pendiente" },
   { value: "en_progreso", label: "En progreso" },
   { value: "completada",  label: "Completada" },
@@ -115,7 +115,7 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
       setDetalle((prev) => ({ ...prev, estado: nuevoEstado }));
       onEstadoCambiado(tareaId, nuevoEstado);
     } catch (err) {
-      setErrMsg(err.response?.data?.error || "Error al cambiar estado.");
+      setErrMsg(err.response?.data?.error || "Error al cambio de estado.");
     } finally {
       setCambiando(false);
     }
@@ -479,132 +479,134 @@ export default function AdminTareas() {
 
         {/* Tab Tareas */}
         {tab === "tareas" && (
-        <div>
-          {/* Filtros */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {ESTADOS.map((e) => (
-              <button key={e.value} onClick={() => handleFiltro(e.value)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
-                  estadoFiltro === e.value
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                    : "border-gray-200 text-gray-600 hover:border-gray-300 bg-white"
-                }`}>
-                {e.label}
-              </button>
-            ))}
-          </div>
-        </div>
+          <div>
+            {/* Filtros */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {ESTADOS.map((e) => (
+                <button 
+                  key={e.value} 
+                  onClick={() => handleFiltro(e.value)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
+                    estadoFiltro === e.value
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300 bg-white"
+                  }`}
+                >
+                  {e.label}
+                </button>
+              ))}
+            </div>
 
-        {errMsg && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
-            {errMsg}
+            {errMsg && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+                {errMsg}
+              </div>
+            )}
+
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              {/* Cabecera tabla */}
+              <div className="hidden md:grid grid-cols-[1fr_130px_110px_90px_80px] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <span>Tarea</span>
+                <span>Categoría</span>
+                <span>Cliente</span>
+                <span>Fecha</span>
+                <span className="text-right">Estado</span>
+              </div>
+
+              {loading ? (
+                <Spinner />
+              ) : tareas.length === 0 ? (
+                <div className="text-center py-16">
+                  <ClipboardList className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No hay tareas con este filtro</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {tareas.map((t) => {
+                    const est = estadoStyle[t.estado] || { cls: "bg-gray-100 text-gray-600", label: t.estado };
+                    const seleccionada = panelId === t.id;
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => setPanelId(seleccionada ? null : t.id)}
+                        className={`grid grid-cols-1 md:grid-cols-[1fr_130px_110px_90px_80px] gap-2 md:gap-4 px-6 py-4 items-center cursor-pointer transition ${
+                          seleccionada ? "bg-emerald-50" : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{t.titulo}</p>
+                          {t.descripcion && (
+                            <p className="text-xs text-gray-400 truncate mt-0.5">{t.descripcion}</p>
+                          )}
+                          {t.presupuesto && (
+                            <p className="text-xs text-emerald-600 font-medium mt-0.5">
+                              ${Number(t.presupuesto).toLocaleString("es-MX")}
+                            </p>
+                          )}
+                        </div>
+                        <p className="hidden md:block text-sm text-gray-500 truncate">{t.categoria}</p>
+                        <p className="hidden md:block text-sm text-gray-500 truncate">{t.cliente_nombre}</p>
+                        <p className="hidden md:block text-xs text-gray-400">
+                          {new Date(t.created_at).toLocaleDateString("es-MX")}
+                        </p>
+                        <div className="flex md:justify-end">
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${est.cls}`}>
+                            {est.label}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Paginación */}
+              {totalPaginas > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+                  <p className="text-sm text-gray-500">
+                    Página {page} de {totalPaginas}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1 || loading}
+                      className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition">
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => setPage((p) => Math.min(totalPaginas, p + 1))}
+                      disabled={page === totalPaginas || loading}
+                      className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition">
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-gray-400 mt-3 text-center">
+              💡 Haz clic en cualquier tarea para ver su detalle, postulaciones y cambiar su estado.
+            </p>
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          {/* Cabecera tabla */}
-          <div className="hidden md:grid grid-cols-[1fr_130px_110px_90px_80px] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            <span>Tarea</span>
-            <span>Categoría</span>
-            <span>Cliente</span>
-            <span>Fecha</span>
-            <span className="text-right">Estado</span>
-          </div>
+        {/* Panel lateral de detalle */}
+        {panelId && (
+          <PanelDetalle
+            tareaId={panelId}
+            onClose={() => setPanelId(null)}
+            onEliminar={(t) => setModalEliminar(t)}
+            onEstadoCambiado={handleEstadoCambiado}
+          />
+        )}
 
-          {loading ? (
-            <Spinner />
-          ) : tareas.length === 0 ? (
-            <div className="text-center py-16">
-              <ClipboardList className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No hay tareas con este filtro</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {tareas.map((t) => {
-                const est = estadoStyle[t.estado] || { cls: "bg-gray-100 text-gray-600", label: t.estado };
-                const seleccionada = panelId === t.id;
-                return (
-                  <div
-                    key={t.id}
-                    onClick={() => setPanelId(seleccionada ? null : t.id)}
-                    className={`grid grid-cols-1 md:grid-cols-[1fr_130px_110px_90px_80px] gap-2 md:gap-4 px-6 py-4 items-center cursor-pointer transition ${
-                      seleccionada ? "bg-emerald-50" : "hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{t.titulo}</p>
-                      {t.descripcion && (
-                        <p className="text-xs text-gray-400 truncate mt-0.5">{t.descripcion}</p>
-                      )}
-                      {t.presupuesto && (
-                        <p className="text-xs text-emerald-600 font-medium mt-0.5">
-                          ${Number(t.presupuesto).toLocaleString("es-MX")}
-                        </p>
-                      )}
-                    </div>
-                    <p className="hidden md:block text-sm text-gray-500 truncate">{t.categoria}</p>
-                    <p className="hidden md:block text-sm text-gray-500 truncate">{t.cliente_nombre}</p>
-                    <p className="hidden md:block text-xs text-gray-400">
-                      {new Date(t.created_at).toLocaleDateString("es-MX")}
-                    </p>
-                    <div className="flex md:justify-end">
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${est.cls}`}>
-                        {est.label}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Paginación */}
-          {totalPaginas > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-              <p className="text-sm text-gray-500">
-                Página {page} de {totalPaginas}
-              </p>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1 || loading}
-                  className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition">
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button onClick={() => setPage((p) => Math.min(totalPaginas, p + 1))}
-                  disabled={page === totalPaginas || loading}
-                  className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition">
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <p className="text-xs text-gray-400 mt-3 text-center">
-          💡 Haz clic en cualquier tarea para ver su detalle, postulaciones y cambiar su estado.
-        </p>
+        {/* Modal eliminar */}
+        {modalEliminar && (
+          <ModalEliminar
+            tarea={modalEliminar}
+            onClose={() => setModalEliminar(null)}
+            onEliminada={handleEliminada}
+          />
+        )}
       </div>
-
-      {/* Panel lateral de detalle */}
-      {panelId && (
-        <PanelDetalle
-          tareaId={panelId}
-          onClose={() => setPanelId(null)}
-          onEliminar={(t) => setModalEliminar(t)}
-          onEstadoCambiado={handleEstadoCambiado}
-        />
-      )}
-
-      {/* Modal eliminar */}
-      {modalEliminar && (
-        <ModalEliminar
-          tarea={modalEliminar}
-          onClose={() => setModalEliminar(null)}
-          onEliminada={handleEliminada}
-        />
-      )}
-      </div>
-      )}
     </AdminLayout>
   );
 }
