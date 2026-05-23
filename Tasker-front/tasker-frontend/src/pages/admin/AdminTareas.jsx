@@ -9,7 +9,7 @@ import AdminLayout from "./AdminLayout";
 
 // ── Constantes ────────────────────────────────────────
 const ESTADOS = [
-  { value: "",            label: "Todos" },
+  { value: "",        label: "Todos" },
   { value: "pendiente",   label: "Pendiente" },
   { value: "en_progreso", label: "En progreso" },
   { value: "completada",  label: "Completada" },
@@ -115,7 +115,7 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
       setDetalle((prev) => ({ ...prev, estado: nuevoEstado }));
       onEstadoCambiado(tareaId, nuevoEstado);
     } catch (err) {
-      setErrMsg(err.response?.data?.error || "Error al cambiar estado.");
+      setErrMsg(err.response?.data?.error || "Error al cambio de estado.");
     } finally {
       setCambiando(false);
     }
@@ -132,6 +132,21 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
           <h2 className="font-semibold text-gray-900">Detalle de tarea</h2>
           <div className="flex items-center gap-2">
+            {detalle && detalle.estado !== "cancelada" && (
+              <button
+                onClick={async () => {
+                  if (!window.confirm("¿Cancelar esta tarea?")) return;
+                  try {
+                    await api.patch(`/admin/tareas/${detalle.id}/cancelar`, { motivo: "Cancelada por administrador" });
+                    onEstadoCambiado(detalle.id, "cancelada");
+                  } catch (err) {
+                    alert(err.response?.data?.error || "Error al cancelar");
+                  }
+                }}
+                className="flex items-center gap-1.5 text-xs font-medium text-red-600 border border-red-200 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition">
+                Cancelar tarea
+              </button>
+            )}
             <button onClick={() => onEliminar(detalle)} disabled={!detalle}
               className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition disabled:opacity-30">
               <Trash2 className="h-4 w-4" />
@@ -276,14 +291,17 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
 
 // ── Componente principal ──────────────────────────────
 export default function AdminTareas() {
-  const [tareas, setTareas]             = useState([]);
-  const [total, setTotal]               = useState(0);
-  const [page, setPage]                 = useState(1);
-  const [estadoFiltro, setEstadoFiltro] = useState("");
-  const [loading, setLoading]           = useState(true);
-  const [errMsg, setErrMsg]             = useState("");
-  const [panelId, setPanelId]           = useState(null);
+  const [tareas, setTareas]               = useState([]);
+  const [total, setTotal]                 = useState(0);
+  const [page, setPage]                   = useState(1);
+  const [estadoFiltro, setEstadoFiltro]   = useState("");
+  const [loading, setLoading]             = useState(true);
+  const [errMsg, setErrMsg]               = useState("");
+  const [panelId, setPanelId]             = useState(null);
   const [modalEliminar, setModalEliminar] = useState(null);
+  const [tab, setTab]                     = useState("tareas"); // "tareas" | "reportes"
+  const [reportes, setReportes]           = useState([]);
+  const [loadingReportes, setLoadingReportes] = useState(false);
   const LIMIT = 20;
 
   const cargar = useCallback(() => {
@@ -303,6 +321,38 @@ export default function AdminTareas() {
   useEffect(() => { cargar(); }, [cargar]);
 
   const handleFiltro = (val) => { setEstadoFiltro(val); setPage(1); };
+
+  const cargarReportes = () => {
+    setLoadingReportes(true);
+    api.get("/admin/reportes")
+      .then((r) => setReportes(r.data.data || []))
+      .finally(() => setLoadingReportes(false));
+  };
+
+  useEffect(() => {
+    if (tab === "reportes") cargarReportes();
+  }, [tab]);
+
+  const handleCancelarTarea = async (id) => {
+    if (!window.confirm("¿Cancelar esta tarea?")) return;
+    try {
+      await api.patch(`/admin/tareas/${id}/cancelar`, { motivo: "Cancelada por administrador" });
+      setTareas((prev) => prev.map((t) => t.id === id ? { ...t, estado: "cancelada" } : t));
+    } catch (err) {
+      alert(err.response?.data?.error || "Error al cancelar");
+    }
+  };
+
+  const handleResolverReporte = async (id) => {
+    const resolucion = window.prompt("Escribe la resolución del reporte:");
+    if (!resolucion) return;
+    try {
+      await api.patch(`/admin/reportes/${id}`, { estado: "resuelto", resolucion });
+      cargarReportes();
+    } catch {
+      alert("Error al actualizar el reporte");
+    }
+  };
 
   const handleEliminada = () => {
     setModalEliminar(null);
@@ -329,129 +379,234 @@ export default function AdminTareas() {
               {total} tarea{total !== 1 ? "s" : ""} en total
             </p>
           </div>
-          {/* Filtros */}
-          <div className="flex flex-wrap gap-2">
-            {ESTADOS.map((e) => (
-              <button key={e.value} onClick={() => handleFiltro(e.value)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
-                  estadoFiltro === e.value
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                    : "border-gray-200 text-gray-600 hover:border-gray-300 bg-white"
-                }`}>
-                {e.label}
-              </button>
-            ))}
-          </div>
         </div>
 
-        {errMsg && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
-            {errMsg}
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b border-gray-200">
+          {[
+            { key: "tareas",   label: "Gestión de tareas" },
+            { key: "reportes", label: `Reportes${reportes.filter(r => r.estado === "pendiente").length > 0 ? ` (${reportes.filter(r => r.estado === "pendiente").length})` : ""}` },
+          ].map((t) => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${
+                tab === t.key
+                  ? "border-emerald-500 text-emerald-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Reportes */}
+        {tab === "reportes" && (
+          <div>
+            {loadingReportes ? (
+              <div className="flex justify-center py-16">
+                <div className="w-7 h-7 border-4 border-t-transparent rounded-full animate-spin"
+                  style={{ borderColor: "#10b981", borderTopColor: "transparent" }} />
+              </div>
+            ) : reportes.length === 0 ? (
+              <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
+                <p className="text-2xl mb-2">📋</p>
+                <p className="text-gray-500 font-medium">No hay reportes</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reportes.map((r) => (
+                  <div key={r.id} className="bg-white rounded-2xl border border-gray-200 p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-semibold text-gray-900 text-sm">
+                            Tarea #{r.tarea_id} — {r.tarea_titulo}
+                          </span>
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                            r.tarea_estado === "cancelada" ? "bg-red-100 text-red-600"
+                            : r.tarea_estado === "en_progreso" ? "bg-amber-100 text-amber-700"
+                            : "bg-gray-100 text-gray-600"
+                          }`}>
+                            {r.tarea_estado?.replace("_", " ")}
+                          </span>
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                            r.estado === "pendiente" ? "bg-red-100 text-red-600"
+                            : r.estado === "resuelto" ? "bg-green-100 text-green-700"
+                            : "bg-amber-100 text-amber-700"
+                          }`}>
+                            Reporte: {r.estado}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 mb-1">
+                          <span className="font-medium">Cliente:</span> {r.cliente_nombre}
+                        </p>
+                        <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2 mt-2">
+                          <span className="font-medium text-gray-700">Motivo:</span> {r.motivo}
+                        </p>
+                        {r.resolucion && (
+                          <p className="text-sm text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2 mt-2">
+                            <span className="font-medium">Resolución:</span> {r.resolucion}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-400 mt-2">
+                          {new Date(r.created_at).toLocaleDateString("es-MX", {
+                            day: "numeric", month: "long", year: "numeric",
+                            hour: "2-digit", minute: "2-digit"
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        {r.tarea_estado !== "cancelada" && (
+                          <button onClick={() => handleCancelarTarea(r.tarea_id)}
+                            className="text-xs font-medium text-red-600 border border-red-200 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition">
+                            Cancelar tarea
+                          </button>
+                        )}
+                        {r.estado !== "resuelto" && (
+                          <button onClick={() => handleResolverReporte(r.id)}
+                            style={{ backgroundColor: "#10b981" }}
+                            className="text-xs font-medium text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition">
+                            Marcar resuelto
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          {/* Cabecera tabla */}
-          <div className="hidden md:grid grid-cols-[1fr_130px_110px_90px_80px] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            <span>Tarea</span>
-            <span>Categoría</span>
-            <span>Cliente</span>
-            <span>Fecha</span>
-            <span className="text-right">Estado</span>
-          </div>
-
-          {loading ? (
-            <Spinner />
-          ) : tareas.length === 0 ? (
-            <div className="text-center py-16">
-              <ClipboardList className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No hay tareas con este filtro</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {tareas.map((t) => {
-                const est = estadoStyle[t.estado] || { cls: "bg-gray-100 text-gray-600", label: t.estado };
-                const seleccionada = panelId === t.id;
-                return (
-                  <div
-                    key={t.id}
-                    onClick={() => setPanelId(seleccionada ? null : t.id)}
-                    className={`grid grid-cols-1 md:grid-cols-[1fr_130px_110px_90px_80px] gap-2 md:gap-4 px-6 py-4 items-center cursor-pointer transition ${
-                      seleccionada ? "bg-emerald-50" : "hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{t.titulo}</p>
-                      {t.descripcion && (
-                        <p className="text-xs text-gray-400 truncate mt-0.5">{t.descripcion}</p>
-                      )}
-                      {t.presupuesto && (
-                        <p className="text-xs text-emerald-600 font-medium mt-0.5">
-                          ${Number(t.presupuesto).toLocaleString("es-MX")}
-                        </p>
-                      )}
-                    </div>
-                    <p className="hidden md:block text-sm text-gray-500 truncate">{t.categoria}</p>
-                    <p className="hidden md:block text-sm text-gray-500 truncate">{t.cliente_nombre}</p>
-                    <p className="hidden md:block text-xs text-gray-400">
-                      {new Date(t.created_at).toLocaleDateString("es-MX")}
-                    </p>
-                    <div className="flex md:justify-end">
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${est.cls}`}>
-                        {est.label}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Paginación */}
-          {totalPaginas > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-              <p className="text-sm text-gray-500">
-                Página {page} de {totalPaginas}
-              </p>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1 || loading}
-                  className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition">
-                  <ChevronLeft className="h-4 w-4" />
+        {/* Tab Tareas */}
+        {tab === "tareas" && (
+          <div>
+            {/* Filtros */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {ESTADOS.map((e) => (
+                <button 
+                  key={e.value} 
+                  onClick={() => handleFiltro(e.value)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
+                    estadoFiltro === e.value
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                      : "border-gray-200 text-gray-600 hover:border-gray-300 bg-white"
+                  }`}
+                >
+                  {e.label}
                 </button>
-                <button onClick={() => setPage((p) => Math.min(totalPaginas, p + 1))}
-                  disabled={page === totalPaginas || loading}
-                  className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition">
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+              ))}
+            </div>
+
+            {errMsg && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+                {errMsg}
               </div>
+            )}
+
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              {/* Cabecera tabla */}
+              <div className="hidden md:grid grid-cols-[1fr_130px_110px_90px_80px] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <span>Tarea</span>
+                <span>Categoría</span>
+                <span>Cliente</span>
+                <span>Fecha</span>
+                <span className="text-right">Estado</span>
+              </div>
+
+              {loading ? (
+                <Spinner />
+              ) : tareas.length === 0 ? (
+                <div className="text-center py-16">
+                  <ClipboardList className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No hay tareas con este filtro</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {tareas.map((t) => {
+                    const est = estadoStyle[t.estado] || { cls: "bg-gray-100 text-gray-600", label: t.estado };
+                    const seleccionada = panelId === t.id;
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => setPanelId(seleccionada ? null : t.id)}
+                        className={`grid grid-cols-1 md:grid-cols-[1fr_130px_110px_90px_80px] gap-2 md:gap-4 px-6 py-4 items-center cursor-pointer transition ${
+                          seleccionada ? "bg-emerald-50" : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{t.titulo}</p>
+                          {t.descripcion && (
+                            <p className="text-xs text-gray-400 truncate mt-0.5">{t.descripcion}</p>
+                          )}
+                          {t.presupuesto && (
+                            <p className="text-xs text-emerald-600 font-medium mt-0.5">
+                              ${Number(t.presupuesto).toLocaleString("es-MX")}
+                            </p>
+                          )}
+                        </div>
+                        <p className="hidden md:block text-sm text-gray-500 truncate">{t.categoria}</p>
+                        <p className="hidden md:block text-sm text-gray-500 truncate">{t.cliente_nombre}</p>
+                        <p className="hidden md:block text-xs text-gray-400">
+                          {new Date(t.created_at).toLocaleDateString("es-MX")}
+                        </p>
+                        <div className="flex md:justify-end">
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${est.cls}`}>
+                            {est.label}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Paginación */}
+              {totalPaginas > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+                  <p className="text-sm text-gray-500">
+                    Página {page} de {totalPaginas}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1 || loading}
+                      className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition">
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => setPage((p) => Math.min(totalPaginas, p + 1))}
+                      disabled={page === totalPaginas || loading}
+                      className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition">
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <p className="text-xs text-gray-400 mt-3 text-center">
-          💡 Haz clic en cualquier tarea para ver su detalle, postulaciones y cambiar su estado.
-        </p>
+            <p className="text-xs text-gray-400 mt-3 text-center">
+              💡 Haz clic en cualquier tarea para ver su detalle, postulaciones y cambiar su estado.
+            </p>
+          </div>
+        )}
+
+        {/* Panel lateral de detalle */}
+        {panelId && (
+          <PanelDetalle
+            tareaId={panelId}
+            onClose={() => setPanelId(null)}
+            onEliminar={(t) => setModalEliminar(t)}
+            onEstadoCambiado={handleEstadoCambiado}
+          />
+        )}
+
+        {/* Modal eliminar */}
+        {modalEliminar && (
+          <ModalEliminar
+            tarea={modalEliminar}
+            onClose={() => setModalEliminar(null)}
+            onEliminada={handleEliminada}
+          />
+        )}
       </div>
-
-      {/* Panel lateral de detalle */}
-      {panelId && (
-        <PanelDetalle
-          tareaId={panelId}
-          onClose={() => setPanelId(null)}
-          onEliminar={(t) => setModalEliminar(t)}
-          onEstadoCambiado={handleEstadoCambiado}
-        />
-      )}
-
-      {/* Modal eliminar */}
-      {modalEliminar && (
-        <ModalEliminar
-          tarea={modalEliminar}
-          onClose={() => setModalEliminar(null)}
-          onEliminada={handleEliminada}
-        />
-      )}
     </AdminLayout>
   );
 }
