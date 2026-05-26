@@ -64,7 +64,15 @@ router.get("/public-key", (req, res) => {
 // Rutas Google OAuth
 router.get(
   "/google",
-  passport.authenticate("google", { scope: ["profile", "email"] }),
+  (req, res, next) => {
+    const role = ["cliente", "trabajador"].includes(req.query.role)
+      ? req.query.role
+      : "cliente";
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+      state: role,
+    })(req, res, next);
+  }
 );
 
 router.get(
