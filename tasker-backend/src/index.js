@@ -27,8 +27,8 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin && process.env.NODE_ENV !== "production")
-        return callback(null, true);
+      // Sin origin = navegacion directa del browser (Google OAuth redirect)
+      if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error("CORS: origen no permitido"));
     },
