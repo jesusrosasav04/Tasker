@@ -12,8 +12,8 @@ function ProviderCard({ t, onContactar, onVerPerfil }) {
   const color  = colors[t.nombre?.charCodeAt(0) % colors.length] || "bg-gray-400";
 
   return (
-    <div className="group overflow-hidden rounded-xl border border-gray-200 bg-white transition-all hover:shadow-lg">
-      <div className="p-6">
+    <div className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all hover:shadow-lg">
+        <div className="flex-1 p-6">
         <div className="flex items-start gap-4">
           <div className={`h-16 w-16 rounded-full ${color} flex items-center justify-center text-white text-xl font-semibold flex-shrink-0`}>
             {initials}

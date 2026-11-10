@@ -143,8 +143,8 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {proveedores.map((p) => (
                 <div key={p.trabajador_id}
-                  className="overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:shadow-lg">
-                  <div className="p-6">
+                  className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:shadow-lg">
+                  <div className="flex-1 p-6">
                     <div className="flex items-start gap-4">
                       <Avatar nombre={p.nombre} />
                       <div className="flex-1 min-w-0">
