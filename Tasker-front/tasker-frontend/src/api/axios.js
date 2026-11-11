@@ -49,19 +49,23 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
+    // En login/register un 401 es "credenciales incorrectas": dejar que la página muestre el error
+    const esAuth = ["/auth/login", "/auth/register"].some((r) => error.config?.url?.includes(r));
+    if (error.response?.status === 401 && !esAuth) {
       localStorage.removeItem("token");
       window.location.href = "/login";
     }
 
     if (
       error.response?.status === 403 &&
-      error.response?.data?.error?.includes("CSRF")
+      error.response?.data?.error?.includes("CSRF") &&
+      !error.config._csrfRetry // reintentar solo una vez, evita bucle infinito
     ) {
       csrfInitialized = false;
       csrfToken = null;
       await initCsrf();
       const config = error.config;
+      config._csrfRetry = true;
       const newCsrf = getCookieValue("csrf_token") || csrfToken;
       if (newCsrf) config.headers["x-csrf-token"] = newCsrf;
       return api(config);

@@ -86,7 +86,10 @@ const getById = async (req, res) => {
       [rows[0].usuario_id],
     );
 
-    return success(res, { ...rows[0], resenas });
+    return success(res, {
+      ...rows[0],
+      resenas: resenas.map((r) => ({ ...r, comentario: decrypt(r.comentario) })),
+    });
   } catch (err) {
     console.error(err);
     return error(res, "Error al obtener trabajador", 500);

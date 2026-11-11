@@ -30,7 +30,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
              WHERE u.google_id = ?`,
             [google_id]
           );
-          if (existing.length > 0) return done(null, existing[0]);
+          // Usuarios bloqueados por admin no pueden entrar con Google
+          if (existing.length > 0)
+            return existing[0].estado === 1 ? done(null, existing[0]) : done(null, false);
 
           // Usuario ya existe por email — vincular google_id
           const [byEmail] = await pool.query(
@@ -40,6 +42,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             [email]
           );
           if (byEmail.length > 0) {
+            if (byEmail[0].estado !== 1) return done(null, false);
             await pool.query("UPDATE usuarios SET google_id = ? WHERE id = ?", [
               google_id, byEmail[0].id,
             ]);

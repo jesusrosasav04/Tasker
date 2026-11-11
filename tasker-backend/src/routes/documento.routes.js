@@ -1,17 +1,20 @@
 const router = require("express").Router();
-const { getMisDocumentos, subirDocumento, eliminarDocumento, verificarDocumento } = require("../controllers/documento.controller");
+const { getMisDocumentos, subirDocumento, getArchivo, eliminarDocumento, verificarDocumento } = require("../controllers/documento.controller");
 const { verifyToken, verifyRole } = require("../middlewares/auth.middleware");
+const { subirArchivo } = require("../middlewares/upload.middleware");
 const { body, param } = require("express-validator");
 const validate = require("../middlewares/validate.middleware");
 
 const subirRules = [
-  body("tipo").trim().notEmpty().withMessage("El tipo es obligatorio"),
-  body("url").trim().isURL().withMessage("La URL del documento no es válida"),
+  body("tipo").trim().isIn(["identificacion", "certificado", "titulo", "otro"]).withMessage("Tipo de documento inválido"),
 ];
+const idRule = param("id").isInt({ min: 1 });
 
 router.get("/mis-documentos", verifyToken, verifyRole("trabajador"), getMisDocumentos);
-router.post("/", verifyToken, verifyRole("trabajador"), subirRules, validate, subirDocumento);
-router.delete("/:id", verifyToken, verifyRole("trabajador"), param("id").isInt({ min: 1 }), validate, eliminarDocumento);
-router.patch("/:id/verificar", verifyToken, verifyRole("admin"), param("id").isInt({ min: 1 }), validate, verificarDocumento);
+// multer va antes de la validación: es quien llena req.body en multipart
+router.post("/", verifyToken, verifyRole("trabajador"), subirArchivo("documentos"), subirRules, validate, subirDocumento);
+router.get("/:id/archivo", verifyToken, verifyRole("trabajador", "admin"), idRule, validate, getArchivo);
+router.delete("/:id", verifyToken, verifyRole("trabajador"), idRule, validate, eliminarDocumento);
+router.patch("/:id/verificar", verifyToken, verifyRole("admin"), idRule, validate, verificarDocumento);
 
 module.exports = router;

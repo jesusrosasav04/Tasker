@@ -28,13 +28,13 @@ export default function GoogleSuccess() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-crema gap-4">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
         <Wrench className="h-6 w-6 text-white" />
       </div>
       <div className="flex items-center gap-3">
-        <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-gray-600 text-sm font-medium">
+        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-piedra text-sm font-medium">
           Iniciando sesión con Google...
         </p>
       </div>

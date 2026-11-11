@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, MapPin, Star } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
@@ -73,8 +73,9 @@ export default function Proveedores() {
   const [trabajadores, setTrabajadores] = useState([]);
   const [categorias, setCategorias]     = useState([]);
   const [loading, setLoading]           = useState(true);
-  const [busqueda, setBusqueda]         = useState("");
-  const [categoria, setCategoria]       = useState("");
+  const [searchParams]                 = useSearchParams();
+  const [busqueda, setBusqueda]         = useState(searchParams.get("nombre") || "");
+  const [categoria, setCategoria]       = useState(searchParams.get("categoria") || "");
   const navigate = useNavigate();
   const { user } = useAuth();
 

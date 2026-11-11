@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle, DollarSign, MapPin, X } from "lucide-react";
 import api from "../api/axios";
+import SkeletonLista from "../components/Skeleton";
 
 // ── Carga Leaflet desde CDN ───────────────────────────
 function useLeaflet() {
@@ -39,7 +40,7 @@ function SelectorMapa({ onSeleccionar, onCerrar, initialLat, initialLng }) {
 
     const icono = L.divIcon({
       className: "",
-      html: `<div style="width:28px;height:28px;background:#10b981;border-radius:50% 50% 50% 0;
+      html: `<div style="width:28px;height:28px;background:#0f766e;border-radius:50% 50% 50% 0;
                transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>`,
       iconSize: [28, 28],
       iconAnchor: [14, 28],
@@ -101,37 +102,35 @@ function SelectorMapa({ onSeleccionar, onCerrar, initialLat, initialLng }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-arena">
           <div>
-            <h3 className="font-semibold text-gray-900">Selecciona tu ubicación</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Haz clic en el mapa para marcar el punto exacto</p>
+            <h3 className="font-display font-semibold text-tinta">Selecciona tu ubicación</h3>
+            <p className="text-xs text-stone-400 mt-0.5">Haz clic en el mapa para marcar el punto exacto</p>
           </div>
-          <button onClick={onCerrar} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 transition">
+          <button onClick={onCerrar} className="p-2 rounded-lg hover:bg-stone-100 text-stone-400 transition">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {!leafletReady ? (
           <div className="h-96 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
-              style={{ borderColor: "#10b981", borderTopColor: "transparent" }} />
+            <SkeletonLista />
           </div>
         ) : (
           <div ref={mapRef} style={{ height: "400px", zIndex: 0 }} />
         )}
 
-        <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between gap-3">
-          <p className="text-xs text-gray-400">
+        <div className="px-5 py-4 border-t border-arena flex items-center justify-between gap-3">
+          <p className="text-xs text-stone-400">
             💡 También puedes escribir la dirección manualmente sin usar el mapa
           </p>
           <div className="flex gap-2 flex-shrink-0">
             <button onClick={onCerrar}
-              className="border border-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition">
+              className="border border-arena text-stone-700 px-4 py-2 rounded-xl text-sm font-medium hover:bg-crema transition">
               Cancelar
             </button>
             <button onClick={handleConfirmar}
-              style={{ backgroundColor: "#10b981" }}
-              className="text-white px-4 py-2 rounded-xl text-sm font-medium hover:opacity-90 transition">
+              className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl text-sm font-medium transition">
               Confirmar ubicación
             </button>
           </div>
@@ -163,7 +162,7 @@ export default function NuevaTarea() {
   useEffect(() => {
     api.get("/categorias")
       .then((r) => setCategorias(r.data.data || []))
-      .catch(() => {});
+      .catch(() => setErrMsg("No se pudieron cargar las categorías. Refresca la página."));
   }, []);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -209,16 +208,15 @@ export default function NuevaTarea() {
   if (exito) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center py-24 gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
-          <CheckCircle className="h-8 w-8 text-emerald-500" />
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-menta">
+          <CheckCircle className="h-8 w-8 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900">¡Tarea creada!</h2>
-        <p className="text-gray-500 text-center max-w-sm">
+        <h2 className="font-display text-2xl font-bold text-tinta">¡Tarea creada!</h2>
+        <p className="text-piedra text-center max-w-sm">
           Tu tarea fue publicada. Los trabajadores podrán postularse en breve.
         </p>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
-          <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-            style={{ borderColor: "#10b981", borderTopColor: "transparent" }} />
+        <div className="flex items-center gap-2 text-sm text-stone-400">
+          <div className="border-primary border-t-transparent w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" />
           Redirigiendo...
         </div>
       </div>
@@ -226,42 +224,42 @@ export default function NuevaTarea() {
   }
 
   return (
-    <div className="flex-1 bg-gray-50 px-4 py-8 lg:px-8">
+    <div className="flex-1 bg-crema px-4 py-8 lg:px-8">
       <div className="mx-auto max-w-2xl">
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
           <Link to="/dashboard/cliente"
-            className="p-2 rounded-lg hover:bg-gray-200 transition text-gray-500">
+            className="p-2 rounded-lg hover:bg-stone-200 transition text-piedra">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Nueva tarea</h1>
-            <p className="text-gray-500 text-sm mt-0.5">Publica lo que necesitas y recibe postulaciones</p>
+            <h1 className="font-display text-2xl font-bold text-tinta">Nueva tarea</h1>
+            <p className="text-piedra text-sm mt-0.5">Publica lo que necesitas y recibe postulaciones</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl border border-arena p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
 
             {/* Título */}
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1.5">
+              <label className="text-sm font-medium text-stone-700 block mb-1.5">
                 Título <span className="text-red-400">*</span>
               </label>
               <input name="titulo" value={form.titulo} onChange={handleChange}
                 placeholder="Ej: Reparación de tubería en cocina"
                 required minLength={5}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
-              <p className="text-xs text-gray-400 mt-1">Mínimo 5 caracteres</p>
+                className="w-full border border-arena rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+              <p className="text-xs text-stone-400 mt-1">Mínimo 5 caracteres</p>
             </div>
 
             {/* Categoría */}
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1.5">
+              <label className="text-sm font-medium text-stone-700 block mb-1.5">
                 Categoría <span className="text-red-400">*</span>
               </label>
               <select name="categoria_id" value={form.categoria_id} onChange={handleChange}
-                required className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 bg-white">
+                required className="w-full border border-arena rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 bg-white">
                 <option value="">Selecciona una categoría</option>
                 {categorias.map((c) => (
                   <option key={c.id} value={c.id}>{c.nombre}</option>
@@ -271,42 +269,42 @@ export default function NuevaTarea() {
 
             {/* Descripción */}
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1.5">
+              <label className="text-sm font-medium text-stone-700 block mb-1.5">
                 Descripción <span className="text-red-400">*</span>
               </label>
               <textarea name="descripcion" value={form.descripcion} onChange={handleChange}
                 rows={4} required
                 placeholder="Describe con detalle qué necesitas, incluyendo materiales, acceso, urgencia, etc."
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 resize-none focus:ring-emerald-400" />
+                className="w-full border border-arena rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 resize-none focus:ring-primary" />
             </div>
 
             {/* Presupuesto y Ubicación */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1.5">
-                  Presupuesto <span className="text-gray-400 font-normal">(opcional)</span>
+                <label className="text-sm font-medium text-stone-700 block mb-1.5">
+                  Presupuesto <span className="text-stone-400 font-normal">(opcional)</span>
                 </label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
                   <input name="presupuesto" type="number" min="0" step="0.01"
                     value={form.presupuesto} onChange={handleChange}
                     placeholder="0.00"
-                    className="w-full pl-9 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                    className="w-full pl-9 border border-arena rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1.5">
-                  Ubicación <span className="text-gray-400 font-normal">(opcional)</span>
+                <label className="text-sm font-medium text-stone-700 block mb-1.5">
+                  Ubicación <span className="text-stone-400 font-normal">(opcional)</span>
                 </label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
                   <input name="ubicacion" value={form.ubicacion} onChange={handleChange}
                     placeholder="Dirección o colonia"
-                    className="w-full pl-9 pr-10 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                    className="w-full pl-9 pr-10 border border-arena rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                   {form.latitud && (
                     <button type="button" onClick={handleLimpiarUbicacion}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-piedra">
                       <X className="h-4 w-4" />
                     </button>
                   )}
@@ -316,17 +314,17 @@ export default function NuevaTarea() {
 
             {/* Botón seleccionar en mapa */}
             <button type="button" onClick={() => setMostrarMapa(true)}
-              className="flex items-center gap-2 text-sm font-medium text-emerald-600 border border-emerald-200 bg-emerald-50 px-4 py-2.5 rounded-xl hover:bg-emerald-100 transition w-full justify-center">
+              className="flex items-center gap-2 text-sm font-medium text-primary border border-menta bg-menta px-4 py-2.5 rounded-xl hover:bg-menta transition w-full justify-center">
               <MapPin className="h-4 w-4" />
               {form.latitud ? "📍 Ubicación en mapa seleccionada — cambiar" : "Seleccionar ubicación en el mapa"}
             </button>
 
             {/* Vista previa miniatura si hay coords */}
             {form.latitud && (
-              <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-                <p className="text-sm text-emerald-700 truncate">{form.ubicacion}</p>
-                <p className="text-xs text-emerald-500 ml-auto flex-shrink-0">
+              <div className="bg-menta border border-menta rounded-xl px-4 py-3 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                <p className="text-sm text-primary truncate">{form.ubicacion}</p>
+                <p className="text-xs text-primary ml-auto flex-shrink-0">
                   {parseFloat(form.latitud).toFixed(4)}, {parseFloat(form.longitud).toFixed(4)}
                 </p>
               </div>
@@ -340,12 +338,11 @@ export default function NuevaTarea() {
 
             <div className="flex gap-3 pt-2">
               <Link to="/dashboard/cliente"
-                className="flex-1 text-center border border-gray-300 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-50 transition text-sm">
+                className="flex-1 text-center border border-arena text-stone-700 py-3 rounded-xl font-medium hover:bg-crema transition text-sm">
                 Cancelar
               </Link>
               <button type="submit" disabled={loading}
-                style={{ backgroundColor: "#10b981" }}
-                className="flex-1 text-white py-3 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-50 text-sm">
+                className="bg-primary hover:bg-primary-dark flex-1 text-white py-3 rounded-xl font-medium transition disabled:opacity-50 text-sm">
                 {loading ? "Publicando..." : "Publicar tarea"}
               </button>
             </div>

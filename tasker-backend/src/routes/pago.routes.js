@@ -12,7 +12,7 @@ const registrarRules = [
 ];
 
 router.get("/metodos", verifyToken, getMetodos);
-router.get("/mis-pagos", verifyToken, verifyRole("cliente"), getMisPagos);
+router.get("/mis-pagos", verifyToken, verifyRole("cliente", "trabajador"), getMisPagos);
 router.get("/tarea/:tarea_id", verifyToken, param("tarea_id").isInt({ min: 1 }), validate, getPagoTarea);
 router.post("/", verifyToken, verifyRole("cliente"), registrarRules, validate, registrarPago);
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Wrench, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import AuthAside from "../components/AuthAside";
 import { useAuth } from "../context/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -34,63 +35,26 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Panel izquierdo — decorativo */}
-      <div
-        className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center p-12 text-white"
-        style={{
-          background:
-            "linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)",
-        }}
-      >
-        <div className="flex items-center gap-3 mb-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
-            <Wrench className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-3xl font-bold">Tasker</span>
-        </div>
-        <h2 className="text-4xl font-extrabold text-center leading-tight mb-4">
-          Conecta con los mejores profesionales
-        </h2>
-        <p className="text-center text-white/80 text-lg max-w-sm">
-          Miles de expertos listos para ayudarte con cualquier servicio que
-          necesites.
-        </p>
-        <div className="mt-12 grid grid-cols-3 gap-8 text-center">
-          {[
-            ["500+", "Especialistas"],
-            ["10K+", "Servicios"],
-            ["4.8★", "Calificación"],
-          ].map(([v, l]) => (
-            <div key={l}>
-              <p className="text-3xl font-extrabold">{v}</p>
-              <p className="text-white/70 text-sm mt-1">{l}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <AuthAside
+        titulo="Servicios locales, gente verificada."
+        subtitulo="Encuentra quién te ayude con la casa, la oficina o cualquier pendiente."
+      />
 
       {/* Panel derecho — formulario */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-gray-50">
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-crema">
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <div className="flex lg:hidden items-center gap-2 mb-8 justify-center">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Wrench className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">Tasker</span>
-          </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+          <div className="bg-white rounded-2xl shadow-sm border border-arena p-8">
+            <h1 className="font-display text-2xl font-bold text-tinta mb-1">
               Bienvenido de vuelta
             </h1>
-            <p className="text-gray-500 text-sm mb-8">
+            <p className="text-piedra text-sm mb-8">
               Ingresa tus datos para continuar
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1.5">
+                <label className="text-sm font-medium text-stone-700 block mb-1.5">
                   Correo electrónico
                 </label>
                 <input
@@ -99,12 +63,12 @@ export default function Login() {
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="tu@correo.com"
                   required
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full border border-arena rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1.5">
+                <label className="text-sm font-medium text-stone-700 block mb-1.5">
                   Contraseña
                 </label>
                 <div className="relative">
@@ -116,12 +80,12 @@ export default function Login() {
                     }
                     placeholder="Tu contraseña"
                     required
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full border border-arena rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-piedra"
                   >
                     {showPass ? (
                       <EyeOff className="h-4 w-4" />
@@ -130,6 +94,9 @@ export default function Login() {
                     )}
                   </button>
                 </div>
+                <Link to="/recuperar" className="mt-1.5 inline-block text-sm font-medium text-primary hover:underline">
+                  ¿Olvidaste tu contraseña?
+                </Link>
               </div>
 
               {error && (
@@ -141,8 +108,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                style={{ backgroundColor: "#10b981" }}
-                className="w-full text-white py-3 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-50 text-sm"
+                className="bg-primary hover:bg-primary-dark w-full text-white py-3 rounded-xl font-medium transition disabled:opacity-50 text-sm"
               >
                 {loading ? "Iniciando sesión..." : "Iniciar sesión"}
               </button>
@@ -151,9 +117,9 @@ export default function Login() {
             {/* Divisor */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
+                <div className="w-full border-t border-arena" />
               </div>
-              <div className="relative flex justify-center text-xs text-gray-400 bg-white px-3 w-fit mx-auto">
+              <div className="relative flex justify-center text-xs text-stone-400 bg-white px-3 w-fit mx-auto">
                 o continúa con
               </div>
             </div>
@@ -164,7 +130,7 @@ export default function Login() {
               onClick={() => {
                 window.location.href = redirectTo ? `${API_URL}/auth/google?redirect=${encodeURIComponent(redirectTo)}` : `${API_URL}/auth/google`;
               }}
-              className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-xl py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+              className="w-full flex items-center justify-center gap-3 border border-arena rounded-xl py-3 text-sm font-medium text-stone-700 hover:bg-crema transition"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
                 <path
@@ -187,7 +153,7 @@ export default function Login() {
               Iniciar sesión con Google
             </button>
 
-            <div className="mt-6 text-center text-sm text-gray-500">
+            <div className="mt-6 text-center text-sm text-piedra">
               ¿No tienes cuenta?{" "}
               <Link
                 to={redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
