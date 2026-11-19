@@ -1,0 +1,17 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: tasker-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: tasker123
+      TZ: America/Mexico_City
+    ports:
+      - "3306:3306"
+    volumes:
+      - tasker-data:/var/lib/mysql
+      # Se ejecuta solo la primera vez (cuando el volumen está vacío)
+      - ./scripts/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+volumes:
+  tasker-data:

@@ -10,8 +10,6 @@ const {
   getTareaDetalle,
   eliminarTarea,
   cambiarEstadoTarea,
-  getReportes,
-  actualizarReporte,
   cancelarTareaAdmin,
 } = require("../controllers/admin.controller");
 const {
@@ -21,8 +19,9 @@ const {
   toggleEstado,
   eliminar,
 } = require("../controllers/categoria.controller");
+const { getReportesAdmin, actualizarReporte } = require("../controllers/reporte.controller");
 const { verifyToken, verifyRole } = require("../middlewares/auth.middleware");
-const { body, param } = require("express-validator");
+const { body, param, query } = require("express-validator");
 const validate = require("../middlewares/validate.middleware");
 
 // Todas las rutas requieren token y rol admin
@@ -92,8 +91,17 @@ router.patch("/categorias/:id/estado", idParamRule, validate, toggleEstado);
 router.delete("/categorias/:id", idParamRule, validate, eliminar);
 
 // ── Reportes ──────────────────────────────────────────
-router.get("/reportes", getReportes);
-router.patch("/reportes/:id", idParamRule, validate, actualizarReporte);
+const reporteRules = [
+  body("estado").isIn(["pendiente", "revisado", "resuelto"]).withMessage("Estado inválido"),
+  body("resolucion").optional().trim().isLength({ max: 2000 }),
+  body("tarea_estado").optional().isIn(["completada", "cancelada"]).withMessage("Estado de tarea inválido"),
+];
+const reporteFiltros = [
+  query("estado").optional().isIn(["pendiente", "revisado", "resuelto"]),
+  query("tipo").optional().isIn(["bug", "pago", "usuario", "servicio", "otro"]),
+];
+router.get("/reportes", reporteFiltros, validate, getReportesAdmin);
+router.patch("/reportes/:id", idParamRule, reporteRules, validate, actualizarReporte);
 router.patch("/tareas/:id/cancelar", idParamRule, validate, cancelarTareaAdmin);
 
 module.exports = router;

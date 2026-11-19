@@ -85,6 +85,17 @@ const getTrabajadoresPendientes = async (req, res) => {
        ORDER BY u.created_at ASC`,
     );
 
+    // Documentos de cada pendiente (documentos.trabajador_id = usuarios.id)
+    if (trabajadores.length > 0) {
+      const [docs] = await db.query(
+        `SELECT id, trabajador_id, tipo, verificado, created_at
+         FROM documentos WHERE trabajador_id IN (?) ORDER BY created_at DESC`,
+        [trabajadores.map((t) => t.usuario_id)],
+      );
+      for (const t of trabajadores)
+        t.documentos = docs.filter((d) => d.trabajador_id === t.usuario_id);
+    }
+
     return success(res, trabajadores);
   } catch (err) {
     console.error(err);
@@ -252,8 +263,7 @@ const getTareaDetalle = async (req, res) => {
         u.nombre AS trabajador_nombre,
         u.email AS trabajador_email
        FROM postulaciones p
-       JOIN trabajador t ON p.trabajador_id = t.id
-       JOIN usuarios u ON t.usuario_id = u.id
+       JOIN usuarios u ON p.trabajador_id = u.id
        WHERE p.tarea_id = ?
        ORDER BY p.created_at ASC`,
       [id]
@@ -278,6 +288,9 @@ const eliminarTarea = async (req, res) => {
 
     if (tarea.length === 0)
       return error(res, "Tarea no encontrada", 404);
+
+    if (tarea[0].estado === "disputa")
+      return error(res, "Esta tarea está en disputa: resuélvela desde Reportes", 400);
 
     // No permitir eliminar tareas en progreso
     if (tarea[0].estado === "en_progreso")
@@ -315,6 +328,8 @@ const cambiarEstadoTarea = async (req, res) => {
 
     if (tarea.length === 0)
       return error(res, "Tarea no encontrada", 404);
+    if (tarea[0].estado === "disputa")
+      return error(res, "Esta tarea está en disputa: resuélvela desde Reportes", 400);
 
     await db.query("UPDATE tareas SET estado = ? WHERE id = ?", [estado, id]);
 
@@ -428,43 +443,6 @@ const getUsuarioDetalle = async (req, res) => {
   }
 };
 
-// GET /api/admin/reportes — Ver todos los reportes
-const getReportes = async (req, res) => {
-  try {
-    const [reportes] = await db.query(
-      `SELECT
-        r.id, r.motivo, r.estado, r.resolucion, r.created_at,
-        t.id AS tarea_id, t.titulo AS tarea_titulo, t.estado AS tarea_estado,
-        u.nombre AS cliente_nombre, u.email AS cliente_email
-       FROM reportes r
-       JOIN tareas t ON r.tarea_id = t.id
-       JOIN usuarios u ON r.cliente_id = u.id
-       ORDER BY r.created_at DESC`
-    );
-    return success(res, reportes);
-  } catch (err) {
-    console.error(err);
-    return error(res, "Error al obtener reportes", 500);
-  }
-};
-
-// PATCH /api/admin/reportes/:id — Actualizar estado de un reporte
-const actualizarReporte = async (req, res) => {
-  const { id } = req.params;
-  const { estado, resolucion } = req.body;
-
-  try {
-    await db.query(
-      "UPDATE reportes SET estado = ?, resolucion = ? WHERE id = ?",
-      [estado || "revisado", resolucion?.trim() || null, id]
-    );
-    return success(res, null, "Reporte actualizado correctamente");
-  } catch (err) {
-    console.error(err);
-    return error(res, "Error al actualizar reporte", 500);
-  }
-};
-
 // PATCH /api/admin/tareas/:id/cancelar — Admin cancela una tarea
 const cancelarTareaAdmin = async (req, res) => {
   const { id } = req.params;
@@ -474,6 +452,8 @@ const cancelarTareaAdmin = async (req, res) => {
     const [tareas] = await db.query("SELECT id, estado FROM tareas WHERE id = ?", [id]);
     if (tareas.length === 0) return error(res, "Tarea no encontrada", 404);
     if (tareas[0].estado === "cancelada") return error(res, "La tarea ya está cancelada", 400);
+    if (tareas[0].estado === "disputa")
+      return error(res, "Esta tarea está en disputa: resuélvela desde Reportes", 400);
 
     await db.query("UPDATE tareas SET estado = 'cancelada' WHERE id = ?", [id]);
 
@@ -506,7 +486,5 @@ module.exports = {
   getTareaDetalle,
   eliminarTarea,
   cambiarEstadoTarea,
-  getReportes,
-  actualizarReporte,
   cancelarTareaAdmin,
 };

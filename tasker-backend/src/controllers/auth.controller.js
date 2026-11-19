@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken"); // ← debe estar ARRIBA
 const db = require("../config/db");
@@ -152,6 +153,17 @@ const me = async (req, res) => {
     );
 
     if (usuarios.length === 0) return error(res, "Usuario no encontrado", 404);
+
+    // El formulario "Mi perfil" precarga estos datos; sin ellos, guardar borraba descripción y categorías
+    if (usuarios[0].role === "trabajador") {
+      const [[perfil]] = await db.query("SELECT id, descripcion FROM trabajador WHERE usuario_id = ?", [req.user.id]);
+      if (perfil) {
+        const [cats] = await db.query("SELECT categoria_id FROM trabajador_categorias WHERE trabajador_id = ?", [perfil.id]);
+        usuarios[0].descripcion = perfil.descripcion;
+        usuarios[0].categorias_ids = cats.map((c) => c.categoria_id);
+      }
+    }
+
     return success(res, usuarios[0]);
   } catch (err) {
     console.error("Error en me:", err);
@@ -182,5 +194,75 @@ const logout = (req, res) => {
   return success(res, null, "Sesión cerrada correctamente");
 };
 
+// ── Recuperar contraseña ─────────────────────────────
+const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
+const MENSAJE_OLVIDE = "Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.";
+
+// POST /api/auth/forgot-password — genera token de un solo uso (30 min)
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const [usuarios] = await db.query(
+      "SELECT id FROM usuarios WHERE email = ? AND estado = 1",
+      [email],
+    );
+
+    // Misma respuesta exista o no el correo: no revela qué cuentas existen
+    if (usuarios.length === 0) return success(res, null, MENSAJE_OLVIDE);
+
+    const token = crypto.randomBytes(32).toString("hex");
+    // Invalida enlaces anteriores del mismo usuario
+    await db.query("UPDATE password_resets SET usado = 1 WHERE usuario_id = ? AND usado = 0", [usuarios[0].id]);
+    await db.query(
+      `INSERT INTO password_resets (usuario_id, token_hash, expires_at)
+       VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))`,
+      [usuarios[0].id, hashToken(token)],
+    );
+
+    const enlace = `${process.env.FRONTEND_URL || "http://localhost:5173"}/restablecer?token=${token}`;
+    // shortcut: no hay servicio de correo; el enlace se imprime en consola. Para producción, enviar `enlace` por email (ver README)
+    console.log(`[recuperar contraseña] ${email} → ${enlace}`);
+
+    return success(
+      res,
+      process.env.NODE_ENV === "development" ? { dev_enlace: enlace } : null,
+      MENSAJE_OLVIDE,
+    );
+  } catch (err) {
+    console.error("Error en forgotPassword:", err);
+    return error(res, "Error interno del servidor", 500);
+  }
+};
+
+// POST /api/auth/reset-password — cambia la contraseña con un token válido
+const resetPassword = async (req, res) => {
+  const { token, password } = req.body;
+
+  try {
+    const [resets] = await db.query(
+      `SELECT id, usuario_id FROM password_resets
+       WHERE token_hash = ? AND usado = 0 AND expires_at > NOW()`,
+      [hashToken(token)],
+    );
+
+    if (resets.length === 0)
+      return error(res, "El enlace no es válido o ya expiró. Solicita uno nuevo.", 400);
+
+    // Marcar como usado primero: si llegan dos peticiones a la vez, solo una gana
+    const [upd] = await db.query("UPDATE password_resets SET usado = 1 WHERE id = ? AND usado = 0", [resets[0].id]);
+    if (upd.affectedRows === 0)
+      return error(res, "El enlace no es válido o ya expiró. Solicita uno nuevo.", 400);
+
+    const hash = await bcrypt.hash(password, 10);
+    await db.query("UPDATE usuarios SET password = ? WHERE id = ?", [hash, resets[0].usuario_id]);
+
+    return success(res, null, "Contraseña actualizada. Ya puedes iniciar sesión.");
+  } catch (err) {
+    console.error("Error en resetPassword:", err);
+    return error(res, "Error interno del servidor", 500);
+  }
+};
+
 module.exports = {
-  logout, register, login, me, googleCallback };
+  logout, register, login, me, googleCallback, forgotPassword, resetPassword };

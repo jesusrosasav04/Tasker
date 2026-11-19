@@ -18,49 +18,41 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import api from "../../api/axios";
+import SkeletonLista from "../../components/Skeleton";
 import AdminLayout from "./AdminLayout";
 
 // ── Helpers ───────────────────────────────────────────
 const estadoTareaStyle = {
-  pendiente:   { cls: "bg-gray-100 text-gray-600",   label: "Pendiente" },
+  pendiente:   { cls: "bg-stone-100 text-piedra",   label: "Pendiente" },
   en_progreso: { cls: "bg-amber-100 text-amber-700", label: "En progreso" },
-  completada:  { cls: "bg-green-100 text-green-700", label: "Completada" },
+  completada:  { cls: "bg-menta text-primary", label: "Completada" },
   cancelada:   { cls: "bg-red-100 text-red-500",     label: "Cancelada" },
+  disputa:     { cls: "bg-red-50 text-red-700",      label: "En disputa" },
 };
 
 const estadoPostStyle = {
-  pendiente: { cls: "bg-gray-100 text-gray-600",   label: "Pendiente" },
-  aceptada:  { cls: "bg-green-100 text-green-700", label: "Aceptada ✓" },
+  pendiente: { cls: "bg-stone-100 text-piedra",   label: "Pendiente" },
+  aceptada:  { cls: "bg-menta text-primary", label: "Aceptada ✓" },
   rechazada: { cls: "bg-red-100 text-red-500",     label: "Rechazada" },
 };
 
 const rolColor = {
-  admin:      "bg-purple-100 text-purple-700",
-  cliente:    "bg-blue-100 text-blue-700",
-  trabajador: "bg-emerald-100 text-emerald-700",
+  admin:      "bg-miel text-miel-dark",
+  cliente:    "bg-stone-100 text-tinta",
+  trabajador: "bg-menta text-primary",
 };
 
-function Spinner() {
-  return (
-    <div className="flex justify-center py-20">
-      <div
-        className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
-        style={{ borderColor: "#10b981", borderTopColor: "transparent" }}
-      />
-    </div>
-  );
-}
 
 function InfoRow({ icon: Icon, label, value }) {
   if (!value) return null;
   return (
     <div className="flex items-start gap-3">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 flex-shrink-0 mt-0.5">
-        <Icon className="h-4 w-4 text-gray-500" />
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 flex-shrink-0 mt-0.5">
+        <Icon className="h-4 w-4 text-piedra" />
       </div>
       <div>
-        <p className="text-xs text-gray-400">{label}</p>
-        <p className="text-sm font-medium text-gray-900 mt-0.5">{value}</p>
+        <p className="text-xs text-stone-400">{label}</p>
+        <p className="text-sm font-medium text-tinta mt-0.5">{value}</p>
       </div>
     </div>
   );
@@ -103,7 +95,7 @@ export default function AdminUsuarioDetalle() {
     }
   };
 
-  if (loading) return <AdminLayout><Spinner /></AdminLayout>;
+  if (loading) return <AdminLayout><SkeletonLista /></AdminLayout>;
 
   if (errMsg)
     return (
@@ -126,13 +118,13 @@ export default function AdminUsuarioDetalle() {
         <div className="mb-6 flex items-center gap-3">
           <Link
             to="/admin/usuarios"
-            className="p-2 rounded-lg hover:bg-gray-200 transition text-gray-500"
+            className="p-2 rounded-lg hover:bg-stone-200 transition text-piedra"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Detalle de usuario</h1>
-            <p className="text-gray-500 text-sm mt-0.5">ID #{usuario.id}</p>
+            <h1 className="font-display text-2xl font-bold text-tinta">Detalle de usuario</h1>
+            <p className="text-piedra text-sm mt-0.5">ID #{usuario.id}</p>
           </div>
         </div>
 
@@ -142,14 +134,14 @@ export default function AdminUsuarioDetalle() {
           <div className="lg:col-span-1 space-y-4">
 
             {/* Tarjeta principal */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl border border-arena p-6">
               {/* Avatar */}
               <div className="flex flex-col items-center text-center mb-5">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 mb-3">
-                  <User className="h-8 w-8 text-emerald-600" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-menta mb-3">
+                  <User className="h-8 w-8 text-primary" />
                 </div>
-                <h2 className="font-bold text-gray-900 text-lg">{usuario.nombre}</h2>
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full mt-1.5 ${rolColor[usuario.role] || "bg-gray-100 text-gray-600"}`}>
+                <h2 className="font-display font-bold text-tinta text-lg">{usuario.nombre}</h2>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full mt-1.5 ${rolColor[usuario.role] || "bg-stone-100 text-piedra"}`}>
                   {usuario.role}
                 </span>
               </div>
@@ -165,8 +157,8 @@ export default function AdminUsuarioDetalle() {
               </div>
 
               {/* Estado y toggle */}
-              <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Estado</span>
+              <div className="mt-5 pt-4 border-t border-arena flex items-center justify-between">
+                <span className="text-sm font-medium text-stone-700">Estado</span>
                 <button
                   onClick={handleToggle}
                   disabled={toggling}
@@ -174,13 +166,13 @@ export default function AdminUsuarioDetalle() {
                 >
                   {usuario.estado === 1 ? (
                     <>
-                      <ToggleRight className="h-7 w-7 text-emerald-500" />
-                      <span className="text-emerald-600">Activo</span>
+                      <ToggleRight className="h-7 w-7 text-primary" />
+                      <span className="text-primary">Activo</span>
                     </>
                   ) : (
                     <>
-                      <ToggleLeft className="h-7 w-7 text-gray-400" />
-                      <span className="text-gray-400">Inactivo</span>
+                      <ToggleLeft className="h-7 w-7 text-stone-400" />
+                      <span className="text-stone-400">Inactivo</span>
                     </>
                   )}
                 </button>
@@ -188,30 +180,30 @@ export default function AdminUsuarioDetalle() {
             </div>
 
             {/* Estadísticas */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-5">
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+            <div className="bg-white rounded-2xl border border-arena p-5">
+              <h3 className="font-display text-sm font-semibold text-piedra uppercase tracking-wide mb-4">
                 Estadísticas
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <ClipboardList className="h-4 w-4 text-gray-400" />
+                  <div className="flex items-center gap-2 text-sm text-piedra">
+                    <ClipboardList className="h-4 w-4 text-stone-400" />
                     Tareas publicadas
                   </div>
-                  <span className="text-sm font-bold text-gray-900">{stats.total_tareas}</span>
+                  <span className="text-sm font-bold text-tinta">{stats.total_tareas}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckCircle className="h-4 w-4 text-gray-400" />
+                  <div className="flex items-center gap-2 text-sm text-piedra">
+                    <CheckCircle className="h-4 w-4 text-stone-400" />
                     Tareas completadas
                   </div>
-                  <span className="text-sm font-bold text-gray-900">{stats.tareas_completadas}</span>
+                  <span className="text-sm font-bold text-tinta">{stats.tareas_completadas}</span>
                 </div>
                 {perfil_trabajador && (
                   <>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Star className="h-4 w-4 text-gray-400" />
+                      <div className="flex items-center gap-2 text-sm text-piedra">
+                        <Star className="h-4 w-4 text-stone-400" />
                         Calificación promedio
                       </div>
                       <span className="text-sm font-bold text-amber-600">
@@ -221,11 +213,11 @@ export default function AdminUsuarioDetalle() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <ShieldCheck className="h-4 w-4 text-gray-400" />
+                      <div className="flex items-center gap-2 text-sm text-piedra">
+                        <ShieldCheck className="h-4 w-4 text-stone-400" />
                         Verificado
                       </div>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${perfil_trabajador.verificado ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${perfil_trabajador.verificado ? "bg-menta text-primary" : "bg-stone-100 text-piedra"}`}>
                         {perfil_trabajador.verificado ? "Sí" : "Pendiente"}
                       </span>
                     </div>
@@ -236,23 +228,23 @@ export default function AdminUsuarioDetalle() {
 
             {/* Perfil trabajador */}
             {perfil_trabajador && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-5">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              <div className="bg-white rounded-2xl border border-arena p-5">
+                <h3 className="font-display text-sm font-semibold text-piedra uppercase tracking-wide mb-3">
                   Perfil trabajador
                 </h3>
                 {perfil_trabajador.categorias && (
-                  <div className="flex items-start gap-2 text-sm text-gray-600 mb-2">
-                    <Tag className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-start gap-2 text-sm text-piedra mb-2">
+                    <Tag className="h-4 w-4 text-stone-400 mt-0.5 flex-shrink-0" />
                     <span>{perfil_trabajador.categorias}</span>
                   </div>
                 )}
                 {perfil_trabajador.descripcion && (
-                  <p className="text-sm text-gray-500 italic leading-relaxed">
+                  <p className="text-sm text-piedra italic leading-relaxed">
                     "{perfil_trabajador.descripcion}"
                   </p>
                 )}
                 {!perfil_trabajador.categorias && !perfil_trabajador.descripcion && (
-                  <p className="text-sm text-gray-400">Sin información adicional</p>
+                  <p className="text-sm text-stone-400">Sin información adicional</p>
                 )}
               </div>
             )}
@@ -262,31 +254,31 @@ export default function AdminUsuarioDetalle() {
           <div className="lg:col-span-2 space-y-5">
 
             {/* Tareas como cliente */}
-            <div className="bg-white rounded-2xl border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-                <ClipboardList className="h-4 w-4 text-gray-400" />
-                <h3 className="font-semibold text-gray-900">
+            <div className="bg-white rounded-2xl border border-arena">
+              <div className="px-6 py-4 border-b border-arena flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-stone-400" />
+                <h3 className="font-display font-semibold text-tinta">
                   Tareas publicadas
                 </h3>
-                <span className="ml-auto text-xs text-gray-400">
+                <span className="ml-auto text-xs text-stone-400">
                   Últimas {tareas_cliente.length}
                 </span>
               </div>
 
               {tareas_cliente.length === 0 ? (
                 <div className="text-center py-10">
-                  <ClipboardList className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">No ha publicado tareas</p>
+                  <ClipboardList className="h-8 w-8 text-stone-200 mx-auto mb-2" />
+                  <p className="text-sm text-stone-400">No ha publicado tareas</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-arena">
                   {tareas_cliente.map((t) => {
-                    const est = estadoTareaStyle[t.estado] || { cls: "bg-gray-100 text-gray-600", label: t.estado };
+                    const est = estadoTareaStyle[t.estado] || { cls: "bg-stone-100 text-piedra", label: t.estado };
                     return (
-                      <div key={t.id} className="px-6 py-3.5 flex items-center justify-between gap-3 hover:bg-gray-50 transition">
+                      <div key={t.id} className="px-6 py-3.5 flex items-center justify-between gap-3 hover:bg-crema transition">
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{t.titulo}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="text-sm font-medium text-tinta truncate">{t.titulo}</p>
+                          <p className="text-xs text-stone-400 mt-0.5">
                             {t.categoria} · {new Date(t.created_at).toLocaleDateString("es-MX")}
                           </p>
                         </div>
@@ -302,36 +294,36 @@ export default function AdminUsuarioDetalle() {
 
             {/* Postulaciones (solo si es trabajador) */}
             {usuario.role === "trabajador" && (
-              <div className="bg-white rounded-2xl border border-gray-200">
-                <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-gray-400" />
-                  <h3 className="font-semibold text-gray-900">Postulaciones</h3>
-                  <span className="ml-auto text-xs text-gray-400">
+              <div className="bg-white rounded-2xl border border-arena">
+                <div className="px-6 py-4 border-b border-arena flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-stone-400" />
+                  <h3 className="font-display font-semibold text-tinta">Postulaciones</h3>
+                  <span className="ml-auto text-xs text-stone-400">
                     Últimas {postulaciones.length}
                   </span>
                 </div>
 
                 {postulaciones.length === 0 ? (
                   <div className="text-center py-10">
-                    <Briefcase className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-                    <p className="text-sm text-gray-400">No tiene postulaciones</p>
+                    <Briefcase className="h-8 w-8 text-stone-200 mx-auto mb-2" />
+                    <p className="text-sm text-stone-400">No tiene postulaciones</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-arena">
                     {postulaciones.map((p) => {
                       const estPost = estadoPostStyle[p.postulacion_estado] || estadoPostStyle.pendiente;
-                      const estTarea = estadoTareaStyle[p.tarea_estado] || { cls: "bg-gray-100 text-gray-500", label: p.tarea_estado };
+                      const estTarea = estadoTareaStyle[p.tarea_estado] || { cls: "bg-stone-100 text-piedra", label: p.tarea_estado };
                       return (
-                        <div key={p.id} className="px-6 py-3.5 hover:bg-gray-50 transition">
+                        <div key={p.id} className="px-6 py-3.5 hover:bg-crema transition">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{p.titulo}</p>
+                              <p className="text-sm font-medium text-tinta truncate">{p.titulo}</p>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className={`text-xs px-2 py-0.5 rounded-full ${estTarea.cls}`}>
                                   Tarea: {estTarea.label}
                                 </span>
                                 {p.precio_propuesto && (
-                                  <span className="text-xs text-emerald-600 font-medium">
+                                  <span className="text-xs text-primary font-medium">
                                     ${Number(p.precio_propuesto).toLocaleString("es-MX")}
                                   </span>
                                 )}

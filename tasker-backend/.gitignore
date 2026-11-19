@@ -18,3 +18,5 @@ npm-debug.log*
 # Sistema operativo
 .DS_Store
 Thumbs.db
+# Archivos subidos por usuarios (documentos de identidad, etc.)
+uploads/

@@ -99,22 +99,25 @@ const getPagoTarea = async (req, res) => {
   }
 };
 
-// GET /api/pagos/mis-pagos — Historial de pagos del cliente
+// GET /api/pagos/mis-pagos — Historial: pagos hechos (cliente) o recibidos (trabajador)
 const getMisPagos = async (req, res) => {
   const usuario_id = req.user.id;
+  const columna = req.user.role === "trabajador" ? "p.trabajador_id" : "p.cliente_id";
 
   try {
     const [pagos] = await db.query(
       `SELECT
-        p.id, p.monto, p.estado, p.created_at,
+        p.id, p.tarea_id, p.monto, p.estado, p.referencia, p.created_at,
         mp.nombre AS metodo_pago,
         t.titulo AS tarea,
-        u.nombre AS trabajador_nombre
+        uc.nombre AS cliente_nombre,
+        ut.nombre AS trabajador_nombre
        FROM pagos p
        JOIN metodos_pago mp ON p.metodo_pago_id = mp.id
        JOIN tareas t ON p.tarea_id = t.id
-       JOIN usuarios u ON p.trabajador_id = u.id
-       WHERE p.cliente_id = ?
+       JOIN usuarios uc ON p.cliente_id = uc.id
+       JOIN usuarios ut ON p.trabajador_id = ut.id
+       WHERE ${columna} = ?
        ORDER BY p.created_at DESC`,
       [usuario_id]
     );

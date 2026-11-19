@@ -6,6 +6,8 @@ const {
   me,
   logout,
   googleCallback,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/auth.controller");
 const { verifyToken } = require("../middlewares/auth.middleware");
 const { authLimiter } = require("../middlewares/rateLimiter.middleware");
@@ -45,6 +47,27 @@ const loginRules = [
 router.post("/register", authLimiter, registerRules, validate, register);
 router.post("/login", authLimiter, loginRules, validate, login);
 router.get("/me", verifyToken, me);
+
+// Recuperar contraseña
+router.post(
+  "/forgot-password",
+  authLimiter,
+  [body("email").isEmail().withMessage("Email inválido").normalizeEmail()],
+  validate,
+  forgotPassword,
+);
+router.post(
+  "/reset-password",
+  authLimiter,
+  [
+    body("token").isHexadecimal().isLength({ min: 64, max: 64 }).withMessage("Enlace inválido"),
+    body("password")
+      .isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres")
+      .isLength({ max: 72 }).withMessage("Contraseña demasiado larga"),
+  ],
+  validate,
+  resetPassword,
+);
 
 // Llave pública para verificar JWT (firma digital asimétrica RS256).
 // Cualquier cliente puede verificar tokens emitidos por el servidor con esta llave,

@@ -1,5 +1,6 @@
 const pool = require("../config/db");
 const { success, error } = require("../utils/response");
+const { decrypt } = require("../config/encryption");
 
 // POST /api/tareas — cliente crea una tarea
 const crearTarea = async (req, res) => {
@@ -87,7 +88,11 @@ const misTareas = async (req, res) => {
          t.id, t.titulo, t.descripcion, t.presupuesto,
          t.ubicacion, t.latitud, t.longitud,
          t.estado, t.created_at, t.updated_at,
-         c.nombre AS categoria
+         c.nombre AS categoria,
+         (SELECT p.precio_propuesto FROM postulaciones p
+           WHERE p.tarea_id = t.id AND p.estado = 'aceptada' LIMIT 1) AS precio_acordado,
+         EXISTS(SELECT 1 FROM pagos pg
+           WHERE pg.tarea_id = t.id AND pg.estado = 'completado') AS pagada
        FROM tareas t
        JOIN categorias c ON t.categoria_id = c.id
        WHERE t.cliente_id = ?
@@ -229,7 +234,9 @@ const getTareaById = async (req, res) => {
     return success(res, {
       ...tarea,
       trabajador: trabajadorAsignado[0] || null,
-      calificacion: calificacion[0] || null,
+      calificacion: calificacion[0]
+        ? { ...calificacion[0], comentario: decrypt(calificacion[0].comentario) }
+        : null,
     });
   } catch (err) {
     console.error(err);
@@ -336,48 +343,4 @@ const cancelarTarea = async (req, res) => {
     return error(res, "Error al cancelar la tarea", 500);
   }
 };
-
-// POST /api/tareas/:id/reportar — cliente reporta que el trabajador no llegó
-const reportarTarea = async (req, res) => {
-  const cliente_id = req.user.id;
-  const { id } = req.params;
-  const { motivo } = req.body;
-
-  if (!motivo?.trim())
-    return error(res, "Describe brevemente el problema", 400);
-
-  try {
-    const [tareas] = await pool.query(
-      "SELECT id, estado, cliente_id, trabajador_id FROM tareas WHERE id = ? AND cliente_id = ?",
-      [id, cliente_id]
-    );
-
-    if (tareas.length === 0)
-      return error(res, "Tarea no encontrada o no tienes permiso", 404);
-
-    if (tareas[0].estado !== "en_progreso")
-      return error(res, "Solo puedes reportar tareas que están en progreso", 400);
-
-    // Guardar reporte en la tabla reportes
-    await pool.query(
-      `INSERT INTO reportes (tarea_id, cliente_id, motivo) VALUES (?, ?, ?)`,
-      [id, cliente_id, motivo.trim()]
-    );
-
-    // Notificar a admins
-    const { crearNotificacion } = require("./notificacion.controller");
-    const [admins] = await pool.query(
-      `SELECT u.id FROM usuarios u JOIN roles r ON u.role_id = r.id WHERE r.nombre = 'admin'`
-    );
-    for (const admin of admins) {
-      crearNotificacion(admin.id, `Nuevo reporte en tarea #${id}: ${motivo.trim()}`);
-    }
-
-    return success(res, null, "Reporte enviado. Un administrador lo revisará pronto.");
-  } catch (err) {
-    console.error(err);
-    return error(res, "Error al enviar el reporte", 500);
-  }
-};
-
-module.exports = { crearTarea, misTareas, tareasDisponibles, completarTarea, getTareaById, actualizarTarea, cancelarTarea, reportarTarea };
+module.exports = { crearTarea, misTareas, tareasDisponibles, completarTarea, getTareaById, actualizarTarea, cancelarTarea };

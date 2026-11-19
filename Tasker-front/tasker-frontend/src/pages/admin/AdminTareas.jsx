@@ -4,7 +4,9 @@ import {
   X, AlertTriangle, User, Tag, DollarSign,
   MapPin, Calendar, CheckCircle, Users,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import api from "../../api/axios";
+import SkeletonLista from "../../components/Skeleton";
 import AdminLayout from "./AdminLayout";
 
 // ── Constantes ────────────────────────────────────────
@@ -14,30 +16,23 @@ const ESTADOS = [
   { value: "en_progreso", label: "En progreso" },
   { value: "completada",  label: "Completada" },
   { value: "cancelada",   label: "Cancelada" },
+  { value: "disputa",     label: "En disputa" },
 ];
 
 const estadoStyle = {
-  pendiente:   { cls: "bg-gray-100 text-gray-600",   label: "Pendiente" },
+  pendiente:   { cls: "bg-stone-100 text-piedra",   label: "Pendiente" },
   en_progreso: { cls: "bg-amber-100 text-amber-700", label: "En progreso" },
-  completada:  { cls: "bg-green-100 text-green-700", label: "Completada" },
+  completada:  { cls: "bg-menta text-primary", label: "Completada" },
   cancelada:   { cls: "bg-red-100 text-red-500",     label: "Cancelada" },
+  disputa:     { cls: "bg-red-50 text-red-700",      label: "En disputa" },
 };
 
 const postulacionEstilo = {
-  pendiente: "bg-gray-100 text-gray-600",
-  aceptada:  "bg-green-100 text-green-700",
+  pendiente: "bg-stone-100 text-piedra",
+  aceptada:  "bg-menta text-primary",
   rechazada: "bg-red-100 text-red-500",
 };
 
-// ── Spinner ───────────────────────────────────────────
-function Spinner() {
-  return (
-    <div className="flex justify-center py-16">
-      <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
-        style={{ borderColor: "#10b981", borderTopColor: "transparent" }} />
-    </div>
-  );
-}
 
 // ── Modal confirmar eliminar ──────────────────────────
 function ModalEliminar({ tarea, onClose, onEliminada }) {
@@ -62,10 +57,10 @@ function ModalEliminar({ tarea, onClose, onEliminada }) {
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 mb-4">
           <Trash2 className="h-6 w-6 text-red-500" />
         </div>
-        <h3 className="font-semibold text-gray-900 mb-1">Eliminar tarea</h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <h3 className="font-display font-semibold text-tinta mb-1">Eliminar tarea</h3>
+        <p className="text-sm text-piedra mb-4">
           ¿Estás seguro de eliminar{" "}
-          <span className="font-medium text-gray-900">"{tarea.titulo}"</span>?
+          <span className="font-medium text-tinta">"{tarea.titulo}"</span>?
           Se eliminarán también todas sus postulaciones.
         </p>
 
@@ -78,7 +73,7 @@ function ModalEliminar({ tarea, onClose, onEliminada }) {
 
         <div className="flex gap-3">
           <button onClick={onClose}
-            className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition">
+            className="flex-1 border border-arena text-stone-700 py-2.5 rounded-xl text-sm font-medium hover:bg-crema transition">
             Cancelar
           </button>
           <button onClick={handleEliminar} disabled={loading}
@@ -129,10 +124,10 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
       {/* Panel */}
       <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
-          <h2 className="font-semibold text-gray-900">Detalle de tarea</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-arena flex-shrink-0">
+          <h2 className="font-display font-semibold text-tinta">Detalle de tarea</h2>
           <div className="flex items-center gap-2">
-            {detalle && detalle.estado !== "cancelada" && (
+            {detalle && !["cancelada", "disputa"].includes(detalle.estado) && (
               <button
                 onClick={async () => {
                   if (!window.confirm("¿Cancelar esta tarea?")) return;
@@ -148,11 +143,11 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
               </button>
             )}
             <button onClick={() => onEliminar(detalle)} disabled={!detalle}
-              className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition disabled:opacity-30">
+              className="p-2 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-500 transition disabled:opacity-30">
               <Trash2 className="h-4 w-4" />
             </button>
             <button onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 transition">
+              className="p-2 rounded-lg hover:bg-stone-100 text-stone-400 transition">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -161,7 +156,7 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
         {/* Contenido */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {loading ? (
-            <Spinner />
+            <SkeletonLista />
           ) : errMsg ? (
             <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
               {errMsg}
@@ -170,47 +165,53 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
             <>
               {/* Info principal */}
               <div>
-                <h3 className="font-bold text-gray-900 text-lg leading-snug">
+                <h3 className="font-display font-bold text-tinta text-lg leading-snug">
                   {detalle.titulo}
                 </h3>
-                <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                <p className="text-sm text-piedra mt-2 leading-relaxed">
                   {detalle.descripcion}
                 </p>
               </div>
 
               {/* Metadatos */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Tag className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <div className="flex items-center gap-2 text-sm text-piedra">
+                  <Tag className="h-4 w-4 text-stone-400 flex-shrink-0" />
                   {detalle.categoria}
                 </div>
                 {detalle.presupuesto && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <DollarSign className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <div className="flex items-center gap-2 text-sm text-piedra">
+                    <DollarSign className="h-4 w-4 text-stone-400 flex-shrink-0" />
                     ${Number(detalle.presupuesto).toLocaleString("es-MX")}
                   </div>
                 )}
                 {detalle.ubicacion && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 col-span-2">
-                    <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <div className="flex items-center gap-2 text-sm text-piedra col-span-2">
+                    <MapPin className="h-4 w-4 text-stone-400 flex-shrink-0" />
                     {detalle.ubicacion}
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <div className="flex items-center gap-2 text-sm text-piedra">
+                  <User className="h-4 w-4 text-stone-400 flex-shrink-0" />
                   {detalle.cliente_nombre}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <div className="flex items-center gap-2 text-sm text-piedra">
+                  <Calendar className="h-4 w-4 text-stone-400 flex-shrink-0" />
                   {new Date(detalle.created_at).toLocaleDateString("es-MX")}
                 </div>
               </div>
 
               {/* Estado actual + selector */}
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">
                   Estado
                 </p>
+                {detalle.estado === "disputa" ? (
+                  <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    Esta tarea está en disputa. Resuélvela desde{" "}
+                    <Link to="/admin/reportes" className="font-semibold underline">Reportes</Link>.
+                  </p>
+                ) : (
                 <div className="flex flex-wrap gap-2">
                   {["pendiente", "en_progreso", "completada", "cancelada"].map((est) => {
                     const s = estadoStyle[est];
@@ -223,7 +224,7 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
                         className={`text-xs font-medium px-3 py-1.5 rounded-lg border-2 transition ${
                           activo
                             ? `${s.cls} border-current`
-                            : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"
+                            : "bg-white text-stone-400 border-arena hover:border-arena"
                         } disabled:cursor-default`}
                       >
                         {s.label}
@@ -231,8 +232,9 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
                     );
                   })}
                 </div>
+                )}
                 {cambiando && (
-                  <p className="text-xs text-gray-400 mt-2">Actualizando estado...</p>
+                  <p className="text-xs text-stone-400 mt-2">Actualizando estado...</p>
                 )}
                 {errMsg && (
                   <p className="text-xs text-red-500 mt-2">{errMsg}</p>
@@ -241,38 +243,38 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
 
               {/* Postulaciones */}
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3 flex items-center gap-2">
                   <Users className="h-3.5 w-3.5" />
                   Postulaciones ({detalle.postulaciones?.length || 0})
                 </p>
 
                 {!detalle.postulaciones?.length ? (
-                  <p className="text-sm text-gray-400 text-center py-6">
+                  <p className="text-sm text-stone-400 text-center py-6">
                     Aún no hay postulaciones
                   </p>
                 ) : (
                   <div className="space-y-2">
                     {detalle.postulaciones.map((p) => (
                       <div key={p.id}
-                        className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                        className="bg-crema rounded-xl p-3 border border-arena">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
+                            <p className="text-sm font-medium text-tinta truncate">
                               {p.trabajador_nombre}
                             </p>
-                            <p className="text-xs text-gray-400">{p.trabajador_email}</p>
+                            <p className="text-xs text-stone-400">{p.trabajador_email}</p>
                           </div>
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${postulacionEstilo[p.estado] || "bg-gray-100 text-gray-600"}`}>
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${postulacionEstilo[p.estado] || "bg-stone-100 text-piedra"}`}>
                             {p.estado === "aceptada" ? "Aceptada ✓" : p.estado === "rechazada" ? "Rechazada" : "Pendiente"}
                           </span>
                         </div>
                         {p.precio_propuesto && (
-                          <p className="text-xs text-emerald-600 font-medium mt-1.5">
+                          <p className="text-xs text-primary font-medium mt-1.5">
                             Oferta: ${Number(p.precio_propuesto).toLocaleString("es-MX")}
                           </p>
                         )}
                         {p.mensaje && (
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          <p className="text-xs text-piedra mt-1 line-clamp-2">
                             "{p.mensaje}"
                           </p>
                         )}
@@ -299,9 +301,6 @@ export default function AdminTareas() {
   const [errMsg, setErrMsg]               = useState("");
   const [panelId, setPanelId]             = useState(null);
   const [modalEliminar, setModalEliminar] = useState(null);
-  const [tab, setTab]                     = useState("tareas"); // "tareas" | "reportes"
-  const [reportes, setReportes]           = useState([]);
-  const [loadingReportes, setLoadingReportes] = useState(false);
   const LIMIT = 20;
 
   const cargar = useCallback(() => {
@@ -322,37 +321,6 @@ export default function AdminTareas() {
 
   const handleFiltro = (val) => { setEstadoFiltro(val); setPage(1); };
 
-  const cargarReportes = () => {
-    setLoadingReportes(true);
-    api.get("/admin/reportes")
-      .then((r) => setReportes(r.data.data || []))
-      .finally(() => setLoadingReportes(false));
-  };
-
-  useEffect(() => {
-    if (tab === "reportes") cargarReportes();
-  }, [tab]);
-
-  const handleCancelarTarea = async (id) => {
-    if (!window.confirm("¿Cancelar esta tarea?")) return;
-    try {
-      await api.patch(`/admin/tareas/${id}/cancelar`, { motivo: "Cancelada por administrador" });
-      setTareas((prev) => prev.map((t) => t.id === id ? { ...t, estado: "cancelada" } : t));
-    } catch (err) {
-      alert(err.response?.data?.error || "Error al cancelar");
-    }
-  };
-
-  const handleResolverReporte = async (id) => {
-    const resolucion = window.prompt("Escribe la resolución del reporte:");
-    if (!resolucion) return;
-    try {
-      await api.patch(`/admin/reportes/${id}`, { estado: "resuelto", resolucion });
-      cargarReportes();
-    } catch {
-      alert("Error al actualizar el reporte");
-    }
-  };
 
   const handleEliminada = () => {
     setModalEliminar(null);
@@ -374,112 +342,13 @@ export default function AdminTareas() {
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tareas</h1>
-            <p className="text-gray-500 mt-1 text-sm">
+            <h1 className="font-display text-2xl font-bold text-tinta">Tareas</h1>
+            <p className="text-piedra mt-1 text-sm">
               {total} tarea{total !== 1 ? "s" : ""} en total
             </p>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-gray-200">
-          {[
-            { key: "tareas",   label: "Gestión de tareas" },
-            { key: "reportes", label: `Reportes${reportes.filter(r => r.estado === "pendiente").length > 0 ? ` (${reportes.filter(r => r.estado === "pendiente").length})` : ""}` },
-          ].map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition -mb-px ${
-                tab === t.key
-                  ? "border-emerald-500 text-emerald-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Reportes */}
-        {tab === "reportes" && (
-          <div>
-            {loadingReportes ? (
-              <div className="flex justify-center py-16">
-                <div className="w-7 h-7 border-4 border-t-transparent rounded-full animate-spin"
-                  style={{ borderColor: "#10b981", borderTopColor: "transparent" }} />
-              </div>
-            ) : reportes.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-                <p className="text-2xl mb-2">📋</p>
-                <p className="text-gray-500 font-medium">No hay reportes</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {reportes.map((r) => (
-                  <div key={r.id} className="bg-white rounded-2xl border border-gray-200 p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <span className="font-semibold text-gray-900 text-sm">
-                            Tarea #{r.tarea_id} — {r.tarea_titulo}
-                          </span>
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                            r.tarea_estado === "cancelada" ? "bg-red-100 text-red-600"
-                            : r.tarea_estado === "en_progreso" ? "bg-amber-100 text-amber-700"
-                            : "bg-gray-100 text-gray-600"
-                          }`}>
-                            {r.tarea_estado?.replace("_", " ")}
-                          </span>
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                            r.estado === "pendiente" ? "bg-red-100 text-red-600"
-                            : r.estado === "resuelto" ? "bg-green-100 text-green-700"
-                            : "bg-amber-100 text-amber-700"
-                          }`}>
-                            Reporte: {r.estado}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-700 mb-1">
-                          <span className="font-medium">Cliente:</span> {r.cliente_nombre}
-                        </p>
-                        <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2 mt-2">
-                          <span className="font-medium text-gray-700">Motivo:</span> {r.motivo}
-                        </p>
-                        {r.resolucion && (
-                          <p className="text-sm text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2 mt-2">
-                            <span className="font-medium">Resolución:</span> {r.resolucion}
-                          </p>
-                        )}
-                        <p className="text-xs text-gray-400 mt-2">
-                          {new Date(r.created_at).toLocaleDateString("es-MX", {
-                            day: "numeric", month: "long", year: "numeric",
-                            hour: "2-digit", minute: "2-digit"
-                          })}
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-2 flex-shrink-0">
-                        {r.tarea_estado !== "cancelada" && (
-                          <button onClick={() => handleCancelarTarea(r.tarea_id)}
-                            className="text-xs font-medium text-red-600 border border-red-200 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition">
-                            Cancelar tarea
-                          </button>
-                        )}
-                        {r.estado !== "resuelto" && (
-                          <button onClick={() => handleResolverReporte(r.id)}
-                            style={{ backgroundColor: "#10b981" }}
-                            className="text-xs font-medium text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition">
-                            Marcar resuelto
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab Tareas */}
-        {tab === "tareas" && (
-          <div>
             {/* Filtros */}
             <div className="flex flex-wrap gap-2 mb-4">
               {ESTADOS.map((e) => (
@@ -488,8 +357,8 @@ export default function AdminTareas() {
                   onClick={() => handleFiltro(e.value)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
                     estadoFiltro === e.value
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                      : "border-gray-200 text-gray-600 hover:border-gray-300 bg-white"
+                      ? "border-primary bg-menta text-primary"
+                      : "border-arena text-piedra hover:border-arena bg-white"
                   }`}
                 >
                   {e.label}
@@ -503,9 +372,9 @@ export default function AdminTareas() {
               </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-arena overflow-hidden">
               {/* Cabecera tabla */}
-              <div className="hidden md:grid grid-cols-[1fr_130px_110px_90px_80px] gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <div className="hidden md:grid grid-cols-[1fr_130px_110px_90px_80px] gap-4 px-6 py-3 bg-crema border-b border-arena text-xs font-semibold text-piedra uppercase tracking-wide">
                 <span>Tarea</span>
                 <span>Categoría</span>
                 <span>Cliente</span>
@@ -514,39 +383,39 @@ export default function AdminTareas() {
               </div>
 
               {loading ? (
-                <Spinner />
+                <SkeletonLista />
               ) : tareas.length === 0 ? (
                 <div className="text-center py-16">
-                  <ClipboardList className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">No hay tareas con este filtro</p>
+                  <ClipboardList className="h-12 w-12 text-stone-300 mx-auto mb-3" />
+                  <p className="text-piedra">No hay tareas con este filtro</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-arena">
                   {tareas.map((t) => {
-                    const est = estadoStyle[t.estado] || { cls: "bg-gray-100 text-gray-600", label: t.estado };
+                    const est = estadoStyle[t.estado] || { cls: "bg-stone-100 text-piedra", label: t.estado };
                     const seleccionada = panelId === t.id;
                     return (
                       <div
                         key={t.id}
                         onClick={() => setPanelId(seleccionada ? null : t.id)}
                         className={`grid grid-cols-1 md:grid-cols-[1fr_130px_110px_90px_80px] gap-2 md:gap-4 px-6 py-4 items-center cursor-pointer transition ${
-                          seleccionada ? "bg-emerald-50" : "hover:bg-gray-50"
+                          seleccionada ? "bg-menta" : "hover:bg-crema"
                         }`}
                       >
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{t.titulo}</p>
+                          <p className="text-sm font-medium text-tinta truncate">{t.titulo}</p>
                           {t.descripcion && (
-                            <p className="text-xs text-gray-400 truncate mt-0.5">{t.descripcion}</p>
+                            <p className="text-xs text-stone-400 truncate mt-0.5">{t.descripcion}</p>
                           )}
                           {t.presupuesto && (
-                            <p className="text-xs text-emerald-600 font-medium mt-0.5">
+                            <p className="text-xs text-primary font-medium mt-0.5">
                               ${Number(t.presupuesto).toLocaleString("es-MX")}
                             </p>
                           )}
                         </div>
-                        <p className="hidden md:block text-sm text-gray-500 truncate">{t.categoria}</p>
-                        <p className="hidden md:block text-sm text-gray-500 truncate">{t.cliente_nombre}</p>
-                        <p className="hidden md:block text-xs text-gray-400">
+                        <p className="hidden md:block text-sm text-piedra truncate">{t.categoria}</p>
+                        <p className="hidden md:block text-sm text-piedra truncate">{t.cliente_nombre}</p>
+                        <p className="hidden md:block text-xs text-stone-400">
                           {new Date(t.created_at).toLocaleDateString("es-MX")}
                         </p>
                         <div className="flex md:justify-end">
@@ -562,19 +431,19 @@ export default function AdminTareas() {
 
               {/* Paginación */}
               {totalPaginas > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-                  <p className="text-sm text-gray-500">
+                <div className="flex items-center justify-between px-6 py-4 border-t border-arena">
+                  <p className="text-sm text-piedra">
                     Página {page} de {totalPaginas}
                   </p>
                   <div className="flex items-center gap-2">
                     <button onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1 || loading}
-                      className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition">
+                      className="p-2 rounded-lg border border-arena text-piedra hover:bg-crema disabled:opacity-40 transition">
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     <button onClick={() => setPage((p) => Math.min(totalPaginas, p + 1))}
                       disabled={page === totalPaginas || loading}
-                      className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition">
+                      className="p-2 rounded-lg border border-arena text-piedra hover:bg-crema disabled:opacity-40 transition">
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
@@ -582,11 +451,9 @@ export default function AdminTareas() {
               )}
             </div>
 
-            <p className="text-xs text-gray-400 mt-3 text-center">
+            <p className="text-xs text-stone-400 mt-3 text-center">
               💡 Haz clic en cualquier tarea para ver su detalle, postulaciones y cambiar su estado.
             </p>
-          </div>
-        )}
 
         {/* Panel lateral de detalle */}
         {panelId && (

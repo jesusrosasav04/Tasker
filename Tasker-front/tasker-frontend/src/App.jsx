@@ -24,6 +24,12 @@ import AdminUsuarioDetalle from "./pages/admin/AdminUsuarioDetalle";
 import AdminTrabajadores from "./pages/admin/AdminTrabajadores";
 import AdminTareas from "./pages/admin/AdminTareas";
 import AdminCategorias from "./pages/admin/AdminCategorias";
+import MisPagos from "./pages/MisPagos";
+import RecuperarPassword from "./pages/RecuperarPassword";
+import RestablecerPassword from "./pages/RestablecerPassword";
+import NotFound from "./pages/NotFound";
+import Soporte from "./pages/Soporte";
+import AdminReportes from "./pages/admin/AdminReportes";
 
 function App() {
   return (
@@ -37,6 +43,16 @@ function App() {
         <Route path="/publicar" element={<PublicarSolicitud />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/recuperar" element={<RecuperarPassword />} />
+        <Route path="/restablecer" element={<RestablecerPassword />} />
+        <Route
+          path="/pagos"
+          element={
+            <ProtectedRoute roles={["cliente", "trabajador"]}>
+              <MisPagos />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/auth/google/success" element={<GoogleSuccess />} />
 
         {/* Protegidas */}
@@ -152,6 +168,17 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {["/soporte", "/soporte/:id"].map((p) => (
+          <Route key={p} path={p} element={
+            <ProtectedRoute roles={["cliente", "trabajador"]}><Soporte /></ProtectedRoute>
+          } />
+        ))}
+        {["/admin/reportes", "/admin/reportes/:id"].map((p) => (
+          <Route key={p} path={p} element={
+            <ProtectedRoute roles={["admin"]}><AdminReportes /></ProtectedRoute>
+          } />
+        ))}
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />
     </div>
