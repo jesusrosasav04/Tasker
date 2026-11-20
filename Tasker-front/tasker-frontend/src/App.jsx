@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import GoogleSuccess from "./pages/GoogleSuccess";
+import Bienvenida from "./pages/Bienvenida";
 import Proveedores from "./pages/Proveedores";
 import PerfilTrabajador from "./pages/PerfilTrabajador";
 import PublicarSolicitud from "./pages/PublicarSolicitud";
@@ -54,6 +55,14 @@ function App() {
           }
         />
         <Route path="/auth/google/success" element={<GoogleSuccess />} />
+        <Route
+          path="/bienvenida"
+          element={
+            <ProtectedRoute>
+              <Bienvenida />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Protegidas */}
         <Route

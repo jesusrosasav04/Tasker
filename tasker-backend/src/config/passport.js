@@ -17,12 +17,6 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           const nombre    = profile.displayName;
           const google_id = profile.id;
 
-          // Rol enviado en el state (solo aplica para usuarios NUEVOS)
-          const roleSolicitado = req.query.state || "cliente";
-          const roleNombre     = ["cliente", "trabajador"].includes(roleSolicitado)
-            ? roleSolicitado
-            : "cliente";
-
           // Usuario ya existe por google_id
           const [existing] = await pool.query(
             `SELECT u.*, r.nombre AS role_nombre
@@ -49,27 +43,20 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             return done(null, byEmail[0]);
           }
 
-          // Usuario nuevo — obtener role_id
+          // Usuario nuevo con Google: entra SIN rol definido todavía.
+          // perfil_completo = 0 → el frontend lo lleva a /bienvenida a elegir rol.
           const [roles] = await pool.query(
-            "SELECT id FROM roles WHERE nombre = ?", [roleNombre]
+            "SELECT id FROM roles WHERE nombre = 'cliente'"
           );
-          const role_id = roles[0]?.id || 2; // fallback: cliente
+          const role_id = roles[0]?.id || 2; // placeholder; el rol real se fija en /completar-perfil
 
           const [result] = await pool.query(
-            `INSERT INTO usuarios (role_id, nombre, email, google_id, estado)
-             VALUES (?, ?, ?, ?, 1)`,
+            `INSERT INTO usuarios (role_id, nombre, email, google_id, estado, perfil_completo)
+             VALUES (?, ?, ?, ?, 1, 0)`,
             [role_id, nombre, email, google_id]
           );
 
           const newUserId = result.insertId;
-
-          // Si es trabajador, crear perfil en tabla trabajador
-          if (roleNombre === "trabajador") {
-            await pool.query(
-              "INSERT INTO trabajador (usuario_id, verificado) VALUES (?, 0)",
-              [newUserId]
-            );
-          }
 
           const [newUser] = await pool.query(
             `SELECT u.*, r.nombre AS role_nombre

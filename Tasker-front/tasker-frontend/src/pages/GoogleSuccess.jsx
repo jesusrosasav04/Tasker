@@ -18,6 +18,12 @@ export default function GoogleSuccess() {
       localStorage.setItem("token", token);
       const payload = JSON.parse(atob(token.split(".")[1]));
 
+      // Usuario nuevo de Google: aún no eligió rol → pantalla de bienvenida
+      if (payload.perfil_completo === 0) {
+        window.location.replace("/bienvenida");
+        return;
+      }
+
       if (payload.role === "admin") navigate("/admin");
       else if (payload.role === "trabajador") navigate("/dashboard/trabajador");
       else navigate("/dashboard/cliente");

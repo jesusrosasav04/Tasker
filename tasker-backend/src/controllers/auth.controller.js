@@ -35,6 +35,7 @@ const generarToken = (usuario) => {
       id: usuario.id,
       email: usuario.email,
       role: usuario.role_nombre, // ← siempre el nombre: "cliente", "trabajador", "admin"
+      perfil_completo: usuario.perfil_completo ?? 1, // 0 = aún no elige rol (Google)
     },
     privateKey,
     { algorithm: JWT_ALGORITHM, expiresIn: JWT_EXPIRES_IN },
@@ -134,6 +135,7 @@ const login = async (req, res) => {
         nombre: usuario.nombre,
         email: usuario.email,
         role: usuario.role_nombre,
+        perfil_completo: usuario.perfil_completo,
       },
     });
   } catch (err) {
@@ -146,7 +148,7 @@ const login = async (req, res) => {
 const me = async (req, res) => {
   try {
     const [usuarios] = await db.query(
-      `SELECT u.id, u.nombre, u.email, u.telefono, u.created_at, r.nombre AS role
+      `SELECT u.id, u.nombre, u.email, u.telefono, u.created_at, u.perfil_completo, r.nombre AS role
        FROM usuarios u JOIN roles r ON u.role_id = r.id
        WHERE u.id = ? AND u.estado = 1`,
       [req.user.id],
@@ -177,7 +179,12 @@ const googleCallback = (req, res) => {
 
   // Genera token consistente con login normal (RS256, llave privada)
   const token = jwt.sign(
-    { id: user.id, email: user.email, role: user.role_nombre || "cliente" },
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role_nombre || "cliente",
+      perfil_completo: user.perfil_completo ?? 1,
+    },
     privateKey,
     { algorithm: JWT_ALGORITHM, expiresIn: JWT_EXPIRES_IN },
   );
@@ -185,6 +192,77 @@ const googleCallback = (req, res) => {
   res.redirect(
     `${process.env.FRONTEND_URL}/auth/google/success?token=${token}`,
   );
+};
+
+// POST /api/auth/completar-perfil  (onboarding de usuarios de Google)
+// El usuario ya está autenticado (token); aquí define si es cliente o
+// trabajador y, si es trabajador, sus categorías. Deja perfil_completo = 1.
+const completarPerfil = async (req, res) => {
+  const { role } = req.body;
+  const categorias = Array.isArray(req.body.categorias) ? req.body.categorias : [];
+
+  if (!["cliente", "trabajador"].includes(role))
+    return error(res, "Rol inválido. Usa: cliente o trabajador", 400);
+
+  try {
+    const [[usuario]] = await db.query(
+      "SELECT id, email, perfil_completo FROM usuarios WHERE id = ? AND estado = 1",
+      [req.user.id],
+    );
+    if (!usuario) return error(res, "Usuario no encontrado", 404);
+
+    // Si ya completó su perfil, no permitir re-elegir rol por esta vía
+    if (usuario.perfil_completo === 1)
+      return error(res, "El perfil ya fue configurado", 409);
+
+    const [[rol]] = await db.query("SELECT id FROM roles WHERE nombre = ?", [role]);
+    if (!rol) return error(res, "Rol no encontrado", 400);
+
+    await db.query(
+      "UPDATE usuarios SET role_id = ?, perfil_completo = 1 WHERE id = ?",
+      [rol.id, req.user.id],
+    );
+
+    if (role === "trabajador") {
+      // Crear el perfil de trabajador si no existe
+      let [[perfil]] = await db.query(
+        "SELECT id FROM trabajador WHERE usuario_id = ?",
+        [req.user.id],
+      );
+      let trabajador_id = perfil?.id;
+      if (!trabajador_id) {
+        const [t] = await db.query(
+          "INSERT INTO trabajador (usuario_id, verificado) VALUES (?, 0)",
+          [req.user.id],
+        );
+        trabajador_id = t.insertId;
+      }
+      // trabajador_categorias usa trabajador.id (no usuarios.id)
+      if (categorias.length > 0) {
+        const values = categorias.map((cat_id) => [trabajador_id, cat_id]);
+        await db.query(
+          "INSERT IGNORE INTO trabajador_categorias (trabajador_id, categoria_id) VALUES ?",
+          [values],
+        );
+      }
+    }
+
+    const token = generarToken({
+      id: usuario.id,
+      email: usuario.email,
+      role_nombre: role,
+      perfil_completo: 1,
+    });
+    setJwtCookie(res, token);
+
+    return success(res, {
+      token,
+      usuario: { id: usuario.id, email: usuario.email, role, perfil_completo: 1 },
+    });
+  } catch (err) {
+    console.error("Error en completarPerfil:", err);
+    return error(res, "Error interno del servidor", 500);
+  }
 };
 
 
@@ -265,4 +343,4 @@ const resetPassword = async (req, res) => {
 };
 
 module.exports = {
-  logout, register, login, me, googleCallback, forgotPassword, resetPassword };
+  logout, register, login, me, googleCallback, completarPerfil, forgotPassword, resetPassword };
