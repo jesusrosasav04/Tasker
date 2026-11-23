@@ -181,7 +181,7 @@ export default function Bienvenida() {
               </button>
               <button
                 onClick={continuar}
-                disabled={guardando}
+                disabled={guardando || seleccion.length === 0}
                 className="min-h-[54px] flex-1 rounded-2xl bg-tinta text-base font-semibold text-crema transition enabled:hover:bg-stone-700 disabled:opacity-40"
               >
                 {guardando ? "Guardando..." : "Entrar a Tasker"}

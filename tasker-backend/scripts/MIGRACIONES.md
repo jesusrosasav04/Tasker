@@ -15,13 +15,14 @@ powershell -ExecutionPolicy Bypass -File scripts\aplicar-migraciones.ps1
 ```
 
 El script aplica en orden todas las migraciones `NN_*.sql`. Es seguro correrlo
-varias veces: los scripts usan `CREATE TABLE IF NOT EXISTS`, así que no duplica nada.
+varias veces: las que ya estaban aplicadas las marca como "ya estaba aplicada" y sigue.
 
 Si prefieres aplicarlas una por una a mano:
 
 ```powershell
-docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker < scripts\01_password_resets.sql
-docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker < scripts\02_reportes_soporte.sql
+Get-Content scripts\01_password_resets.sql | docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker
+Get-Content scripts\02_reportes_soporte.sql | docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker
+Get-Content scripts\03_onboarding_google.sql | docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker
 ```
 
 ## Opción B — Empezar de cero (borra todos los datos)
@@ -33,7 +34,8 @@ docker compose down -v
 docker compose up -d
 ```
 
-Al recrearse, Docker ejecuta `schema.sql` y todas las migraciones automáticamente.
+Al recrearse, Docker ejecuta `schema.sql` y las migraciones listadas en
+`docker-compose.yml` automáticamente. Si agregas una migración nueva, súmala ahí.
 
 ## Nota
 

@@ -122,7 +122,7 @@ router.post(
   verifyToken,
   [
     body("role").isIn(["cliente", "trabajador"]).withMessage("Rol inválido"),
-    body("categorias").optional().isArray().withMessage("Categorías inválidas"),
+    body("categorias").optional().isArray({ max: 50 }).withMessage("Categorías inválidas"),
     body("categorias.*").isInt({ min: 1 }).withMessage("Categoría inválida"),
   ],
   validate,

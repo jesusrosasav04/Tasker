@@ -1,5 +1,5 @@
 -- Migración 03: onboarding de rol para usuarios que entran con Google (aditiva)
--- Aplicar: docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker < scripts/03_onboarding_google.sql
+-- Aplicar: Get-Content scripts\03_onboarding_google.sql | docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker
 --
 -- Al entrar con Google por primera vez, el usuario todavía no eligió si es
 -- cliente o especialista. Nace con perfil_completo = 0 y el frontend lo manda

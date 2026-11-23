@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: tasker123
+      MYSQL_DATABASE: tasker # las migraciones de initdb necesitan base seleccionada
       TZ: America/Mexico_City
     ports:
       - "3306:3306"
@@ -12,6 +13,10 @@ services:
       - tasker-data:/var/lib/mysql
       # Se ejecuta solo la primera vez (cuando el volumen está vacío)
       - ./scripts/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # Migraciones: al agregar una NN_*.sql nueva, súmala aquí también
+      - ./scripts/01_password_resets.sql:/docker-entrypoint-initdb.d/02-password_resets.sql:ro
+      - ./scripts/02_reportes_soporte.sql:/docker-entrypoint-initdb.d/03-reportes_soporte.sql:ro
+      - ./scripts/03_onboarding_google.sql:/docker-entrypoint-initdb.d/04-onboarding_google.sql:ro
 
 volumes:
   tasker-data:
