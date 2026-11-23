@@ -19,7 +19,7 @@ const CLIENTE = [
 
 export default function Bienvenida() {
   const navigate = useNavigate();
-  const { user, completarPerfil } = useAuth();
+  const { user, completarPerfil, logout } = useAuth();
 
   const [rol, setRol] = useState(null); // "cliente" | "trabajador" | null
   const [paso, setPaso] = useState(1); // 1: elegir rol · 2: categorías
@@ -74,13 +74,21 @@ export default function Bienvenida() {
     <main className="flex flex-1 flex-wrap bg-crema">
       {/* ── Izquierda: contenido ───────────────── */}
       <div className="flex min-w-0 flex-[1_1_560px] flex-col px-6 py-14 lg:px-12">
-        <div className="mb-10 flex items-center gap-2.5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-            <Wrench className="h-5 w-5 text-white" />
-          </span>
-          <span className="font-display text-2xl font-extrabold tracking-tight">
-            tasker<span className="text-primary">.</span>
-          </span>
+        <div className="mb-10 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
+              <Wrench className="h-5 w-5 text-white" />
+            </span>
+            <span className="font-display text-2xl font-extrabold tracking-tight">
+              tasker<span className="text-primary">.</span>
+            </span>
+          </div>
+          <button
+            onClick={logout}
+            className="text-sm font-medium text-stone-500 transition hover:text-tinta"
+          >
+            Cerrar sesión
+          </button>
         </div>
 
         {paso === 1 ? (

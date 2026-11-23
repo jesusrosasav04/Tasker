@@ -218,11 +218,6 @@ const completarPerfil = async (req, res) => {
     const [[rol]] = await db.query("SELECT id FROM roles WHERE nombre = ?", [role]);
     if (!rol) return error(res, "Rol no encontrado", 400);
 
-    await db.query(
-      "UPDATE usuarios SET role_id = ?, perfil_completo = 1 WHERE id = ?",
-      [rol.id, req.user.id],
-    );
-
     if (role === "trabajador") {
       // Crear el perfil de trabajador si no existe
       let [[perfil]] = await db.query(
@@ -246,6 +241,12 @@ const completarPerfil = async (req, res) => {
         );
       }
     }
+
+    // Al final: si falla lo de trabajador, el usuario puede reintentar
+    await db.query(
+      "UPDATE usuarios SET role_id = ?, perfil_completo = 1 WHERE id = ?",
+      [rol.id, req.user.id],
+    );
 
     const token = generarToken({
       id: usuario.id,

@@ -123,6 +123,7 @@ router.post(
   [
     body("role").isIn(["cliente", "trabajador"]).withMessage("Rol inválido"),
     body("categorias").optional().isArray().withMessage("Categorías inválidas"),
+    body("categorias.*").isInt({ min: 1 }).withMessage("Categoría inválida"),
   ],
   validate,
   completarPerfil,

@@ -1,7 +1,8 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { useAuth } from "./context/AuthContext";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -33,9 +34,18 @@ import Soporte from "./pages/Soporte";
 import AdminReportes from "./pages/admin/AdminReportes";
 
 function App() {
+  const { user } = useAuth();
+  const location = useLocation();
+  // Usuario de Google que aún no elige rol: queda "encerrado" en la bienvenida
+  const onboarding = !!user && user.perfil_completo === 0;
+
+  if (onboarding && location.pathname !== "/bienvenida") {
+    return <Navigate to="/bienvenida" replace />;
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar />
+      {!onboarding && <Navbar />}
       <Routes>
         {/* Públicas */}
         <Route path="/" element={<Home />} />
@@ -189,7 +199,7 @@ function App() {
         ))}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <Footer />
+      {!onboarding && <Footer />}
     </div>
   );
 }
