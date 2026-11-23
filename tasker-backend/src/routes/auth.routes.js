@@ -6,6 +6,7 @@ const {
   me,
   logout,
   googleCallback,
+  completarPerfil,
   forgotPassword,
   resetPassword,
 } = require("../controllers/auth.controller");
@@ -114,5 +115,18 @@ router.get("/login-failed", (req, res) => {
 });
 
 router.post("/logout", logout);
+
+// Onboarding: el usuario de Google elige su rol (y categorías si es trabajador)
+router.post(
+  "/completar-perfil",
+  verifyToken,
+  [
+    body("role").isIn(["cliente", "trabajador"]).withMessage("Rol inválido"),
+    body("categorias").optional().isArray({ max: 50 }).withMessage("Categorías inválidas"),
+    body("categorias.*").isInt({ min: 1 }).withMessage("Categoría inválida"),
+  ],
+  validate,
+  completarPerfil,
+);
 
 module.exports = router;

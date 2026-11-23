@@ -35,6 +35,15 @@ export function AuthProvider({ children }) {
     return r.data.data.usuario;
   };
 
+  // Onboarding de Google: define rol (y categorías) y refresca la sesión
+  const completarPerfil = async (payload) => {
+    const r = await api.post("/auth/completar-perfil", payload);
+    localStorage.setItem("token", r.data.data.token);
+    const me = await api.get("/auth/me");
+    setUser(me.data.data);
+    return me.data.data;
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
@@ -43,7 +52,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, completarPerfil }}>
       {children}
     </AuthContext.Provider>
   );
