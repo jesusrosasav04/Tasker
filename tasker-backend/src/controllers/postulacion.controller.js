@@ -1,6 +1,7 @@
 const pool = require("../config/db");
 const { success, error } = require("../utils/response");
 const { crearNotificacion } = require("./notificacion.controller");
+const { POSTULACIONES_GRATIS } = require("../config/creditos");
 
 // POST /api/postulaciones — trabajador se postula a una tarea
 const crearPostulacion = async (req, res) => {
@@ -48,11 +49,56 @@ const crearPostulacion = async (req, res) => {
       return error(res, "Ya te postulaste a esta tarea", 409);
     }
 
-    const [result] = await pool.query(
-      `INSERT INTO postulaciones (tarea_id, trabajador_id, mensaje, precio_propuesto, estado)
-       VALUES (?, ?, ?, ?, 'pendiente')`,
-      [tarea_id, trabajador_id, mensaje || null, precio_propuesto || null],
+    // ── Modelo freemium: 3 postulaciones gratis; después, 1 crédito por postulación
+    const perfilId = perfil[0].id; // trabajador.id (perfil), no usuarios.id
+    const [[{ usadas }]] = await pool.query(
+      "SELECT COUNT(*) AS usadas FROM postulaciones WHERE trabajador_id = ?",
+      [trabajador_id],
     );
+    const esGratis = usadas < POSTULACIONES_GRATIS;
+
+    const conn = await pool.getConnection();
+    let result;
+    try {
+      await conn.beginTransaction();
+
+      if (!esGratis) {
+        // Descuento atómico: solo procede si tiene al menos 1 crédito
+        const [upd] = await conn.query(
+          "UPDATE trabajador SET creditos = creditos - 1 WHERE id = ? AND creditos > 0",
+          [perfilId],
+        );
+        if (upd.affectedRows === 0) {
+          await conn.rollback();
+          return error(
+            res,
+            `Ya usaste tus ${POSTULACIONES_GRATIS} postulaciones gratis. Compra créditos en 'Mi plan' para seguir postulándote.`,
+            402,
+          );
+        }
+      }
+
+      [result] = await conn.query(
+        `INSERT INTO postulaciones (tarea_id, trabajador_id, mensaje, precio_propuesto, estado)
+         VALUES (?, ?, ?, ?, 'pendiente')`,
+        [tarea_id, trabajador_id, mensaje || null, precio_propuesto || null],
+      );
+
+      if (!esGratis) {
+        await conn.query(
+          `INSERT INTO movimientos_credito (trabajador_id, tipo, cantidad, descripcion)
+           VALUES (?, 'consumo', -1, ?)`,
+          [perfilId, `Postulación a la tarea #${tarea_id}`],
+        );
+      }
+
+      await conn.commit();
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      conn.release();
+    }
 
     // Notificar al cliente
     const [trabajador] = await pool.query("SELECT nombre FROM usuarios WHERE id = ?", [trabajador_id]);

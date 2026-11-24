@@ -70,7 +70,7 @@ router.patch(
 
 const estadoTareaRules = [
   body("estado")
-    .isIn(["pendiente", "en_progreso", "completada", "cancelada"])
+    .isIn(["pendiente", "en_progreso", "entregado", "completada", "cancelada"])
     .withMessage("Estado inválido"),
 ];
 

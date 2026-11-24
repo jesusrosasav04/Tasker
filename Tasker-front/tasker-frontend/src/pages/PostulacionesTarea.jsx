@@ -55,7 +55,7 @@ export default function PostulacionesTarea() {
 
   const estadoPostulacion = {
     pendiente: { label: "Pendiente", class: "bg-stone-100 text-piedra" },
-    aceptada: { label: "Aceptada ✓", class: "bg-menta text-primary" },
+    aceptada: { label: "Aceptada", class: "bg-menta text-primary" },
     rechazada: { label: "Rechazada", class: "bg-red-100 text-red-500" },
   };
 

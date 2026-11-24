@@ -20,6 +20,21 @@ if (-not $scripts) {
   exit 0
 }
 
+# MySQL tarda unos segundos en aceptar conexiones después de "docker compose up -d"
+Write-Host "Esperando a que MySQL esté listo..." -ForegroundColor DarkGray
+$ErrorActionPreference = "Continue"
+$listo = $false
+for ($i = 0; $i -lt 30; $i++) {
+  docker exec $contenedor mysqladmin ping "-u$usuario" "-p$password" --silent *> $null
+  if ($LASTEXITCODE -eq 0) { $listo = $true; break }
+  Start-Sleep -Seconds 2
+}
+$ErrorActionPreference = "Stop"
+if (-not $listo) {
+  Write-Host "✗ MySQL no respondió en 60 s. Revisa: docker logs $contenedor" -ForegroundColor Red
+  exit 1
+}
+
 foreach ($s in $scripts) {
   Write-Host "→ Aplicando $($s.Name) ..." -ForegroundColor Cyan
   # Con "Stop", el stderr de mysql haría tronar el script antes de poder revisarlo

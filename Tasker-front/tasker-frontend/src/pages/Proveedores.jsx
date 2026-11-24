@@ -6,7 +6,7 @@ import api from "../api/axios";
 
 const NUEVA_TAREA = "/dashboard/cliente/tareas/nueva";
 
-function ProviderCard({ t, onContactar, onVerPerfil }) {
+function EspecialistaCard({ t, onContactar, onVerPerfil }) {
   const initials = t.nombre?.[0]?.toUpperCase() || "T";
   const colors = ["bg-blue-500","bg-emerald-500","bg-purple-500","bg-red-500","bg-amber-500","bg-pink-500"];
   const color  = colors[t.nombre?.charCodeAt(0) % colors.length] || "bg-gray-400";
@@ -106,7 +106,7 @@ export default function Proveedores() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Especialistas disponibles</h1>
-          <p className="mt-2 text-gray-500">Encuentra el profesional ideal para tu servicio</p>
+          <p className="mt-2 text-gray-500">Encuentra al especialista ideal para tu tarea</p>
         </div>
 
         {/* Filtros */}
@@ -142,7 +142,7 @@ export default function Proveedores() {
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {trabajadores.map((t) => (
-                <ProviderCard
+                <EspecialistaCard
                   key={t.trabajador_id}
                   t={t}
                   onContactar={handleContactar}

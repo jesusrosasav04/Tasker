@@ -15,6 +15,7 @@ const { authLimiter } = require("../middlewares/rateLimiter.middleware");
 const validate = require("../middlewares/validate.middleware");
 const { body } = require("express-validator");
 const { publicKey, JWT_ALGORITHM } = require("../config/jwt-keys");
+const { normalizarTelefono, MSG_TELEFONO } = require("../utils/identidad");
 
 const registerRules = [
   body("nombre")
@@ -29,14 +30,14 @@ const registerRules = [
     .withMessage("La contraseña debe tener al menos 6 caracteres")
     .isLength({ max: 72 })
     .withMessage("Contraseña demasiado larga"),
-  body("role")
-    .isIn(["cliente", "trabajador"])
-    .withMessage("Rol inválido. Usa: cliente o trabajador"),
   body("telefono")
-    .optional()
-    .trim()
-    .isLength({ max: 20 })
-    .withMessage("Teléfono inválido"),
+    .optional({ values: "falsy" })
+    .custom((v) => normalizarTelefono(v) !== null)
+    .withMessage(MSG_TELEFONO),
+  // Consentimiento expreso del aviso de privacidad (LFPDPPP)
+  body("acepta_privacidad")
+    .custom((v) => v === true || v === "true")
+    .withMessage("Debes aceptar el aviso de privacidad"),
 ];
 
 const loginRules = [
@@ -114,6 +115,7 @@ router.post(
     body("role").isIn(["cliente", "trabajador"]).withMessage("Rol inválido"),
     body("categorias").optional().isArray({ max: 50 }).withMessage("Categorías inválidas"),
     body("categorias.*").isInt({ min: 1 }).withMessage("Categoría inválida"),
+    body("acepta_privacidad").optional().isBoolean().withMessage("Valor inválido"),
   ],
   validate,
   completarPerfil,
