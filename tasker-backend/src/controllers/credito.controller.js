@@ -110,7 +110,8 @@ const comprar = async (req, res) => {
     // Con Stripe → sesión de Checkout (modo de prueba con llaves sk_test_)
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
+      // Desde la API 2026-09-30 se usa allowed_payment_method_types (payment_method_types ya no existe)
+      allowed_payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
@@ -129,7 +130,8 @@ const comprar = async (req, res) => {
     return success(res, { url: session.url });
   } catch (err) {
     console.error("Error comprar créditos:", err);
-    return error(res, err.message || "No se pudo iniciar el pago", 500);
+    // El detalle técnico queda en la consola; al usuario, un mensaje claro
+    return error(res, "No se pudo iniciar el pago. Intenta de nuevo en unos minutos.", 500);
   }
 };
 

@@ -327,7 +327,7 @@ const actualizarTarea = async (req, res) => {
 const cancelarTarea = async (req, res) => {
   const cliente_id = req.user.id;
   const { id } = req.params;
-  const { motivo } = req.body; // opcional
+  const { motivo } = req.body || {}; // opcional (en Express 5, sin cuerpo req.body es undefined)
 
   try {
     const [tareas] = await pool.query(

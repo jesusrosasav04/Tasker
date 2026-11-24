@@ -465,7 +465,7 @@ const getUsuarioDetalle = async (req, res) => {
 // PATCH /api/admin/tareas/:id/cancelar — Admin cancela una tarea
 const cancelarTareaAdmin = async (req, res) => {
   const { id } = req.params;
-  const { motivo } = req.body;
+  const { motivo } = req.body || {}; // opcional
 
   try {
     const [tareas] = await db.query("SELECT id, estado FROM tareas WHERE id = ?", [id]);
