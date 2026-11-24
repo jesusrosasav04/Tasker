@@ -56,7 +56,7 @@ const register = async (req, res) => {
     // Igual que Google: nace como cliente provisional con perfil_completo = 0
     // y elige su rol real en /bienvenida (POST /auth/completar-perfil)
     const [roles] = await db.query("SELECT id FROM roles WHERE nombre = 'cliente'");
-    if (roles.length === 0) return error(res, "Role no encontrado", 400);
+    if (roles.length === 0) return error(res, "Rol no encontrado", 400);
 
     const hash = await bcrypt.hash(password, 10);
 
