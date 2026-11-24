@@ -370,7 +370,7 @@ function ModalPostularse({ tarea, onClose, onSuccess }) {
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
               className="flex-1 rounded-xl border border-arena py-2.5 text-sm font-medium text-stone-700 transition hover:bg-crema">
-              Cancelar
+              Cerrar
             </button>
             <button type="submit" disabled={loading}
               className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-medium text-white transition hover:bg-primary-dark disabled:opacity-50">

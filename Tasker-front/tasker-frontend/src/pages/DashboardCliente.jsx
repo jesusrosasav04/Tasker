@@ -54,7 +54,7 @@ function ModalAyuda({ tarea, onClose, onCancelada, onReportar }) {
                 <Flag className="h-5 w-5 flex-shrink-0" />
                 <div className="text-left">
                   <p className="font-semibold">Reportar problema</p>
-                  <p className="text-xs text-amber-600 font-normal mt-0.5">El trabajador no se presentó u otro problema. Puedes abrir una disputa</p>
+                   <p className="text-xs text-amber-600 font-normal mt-0.5">El especialista no se presentó u otro problema. Puedes abrir una disputa</p>
                 </div>
               </button>
               <button onClick={() => { setVista("cancelar"); setMotivo(""); setErrMsg(""); }}
@@ -127,7 +127,7 @@ function ModalCompletar({ tarea, onClose, onConfirmar }) {
         <div className="flex gap-3">
           <button onClick={onClose}
             className="flex-1 border border-arena text-stone-700 py-2.5 rounded-xl text-sm font-medium hover:bg-crema transition">
-            Cancelar
+            Cerrar
           </button>
           <button onClick={handleConfirmar} disabled={loading}
             className="bg-primary hover:bg-primary-dark flex-1 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50">
@@ -176,7 +176,7 @@ function ModalCalificar({ tarea, onClose, onCalificado }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         <div className="flex items-start justify-between p-6 border-b border-arena">
           <div>
-            <h3 className="font-display font-semibold text-tinta">Calificar trabajador</h3>
+            <h3 className="font-display font-semibold text-tinta">Calificar especialista</h3>
             <p className="text-sm text-stone-400 mt-0.5 line-clamp-1">{tarea.titulo}</p>
           </div>
           <button onClick={onClose}
@@ -242,7 +242,7 @@ function ModalCalificar({ tarea, onClose, onCalificado }) {
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
               className="flex-1 border border-arena text-stone-700 py-2.5 rounded-xl text-sm font-medium hover:bg-crema transition">
-              Cancelar
+              Cerrar
             </button>
             <button type="submit" disabled={loading || puntuacion === 0}
               className="bg-primary hover:bg-primary-dark flex-1 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50">
@@ -338,7 +338,7 @@ export default function DashboardCliente() {
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-extrabold tracking-tight text-tinta">Hola, {user?.nombre?.split(" ")[0] || "cliente"}</h1>
-            <p className="text-piedra mt-1">Gestiona tus solicitudes de servicio</p>
+            <p className="text-piedra mt-1">Gestiona tus tareas</p>
           </div>
           <div className="flex flex-wrap gap-2">
           <Link to="/pagos"
@@ -423,7 +423,7 @@ export default function DashboardCliente() {
             <div className="text-center py-16">
               <ClipboardList className="h-12 w-12 text-stone-300 mx-auto mb-3" />
               <p className="text-piedra font-medium">No tienes tareas aún</p>
-              <p className="text-stone-400 text-sm mt-1">Crea tu primera solicitud de servicio</p>
+              <p className="text-stone-400 text-sm mt-1">Crea tu primera tarea</p>
               <Link to="/dashboard/cliente/tareas/nueva"
                 className="bg-primary hover:bg-primary-dark inline-block mt-4 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition">
                 Crear tarea
