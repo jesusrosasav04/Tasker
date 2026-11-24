@@ -44,12 +44,7 @@ const generarToken = (usuario) => {
 
 // POST /api/auth/register
 const register = async (req, res) => {
-  const { nombre, email, password, telefono, role } = req.body;
-
-  const rolesValidos = ["cliente", "trabajador"];
-  if (!rolesValidos.includes(role)) {
-    return error(res, "Role inválido. Usa: cliente o trabajador", 400);
-  }
+  const { nombre, email, password, telefono } = req.body;
 
   try {
     const [existe] = await db.query("SELECT id FROM usuarios WHERE email = ?", [
@@ -58,34 +53,23 @@ const register = async (req, res) => {
     if (existe.length > 0)
       return error(res, "El email ya está registrado", 409);
 
-    const [roles] = await db.query("SELECT id FROM roles WHERE nombre = ?", [
-      role,
-    ]);
+    // Igual que Google: nace como cliente provisional con perfil_completo = 0
+    // y elige su rol real en /bienvenida (POST /auth/completar-perfil)
+    const [roles] = await db.query("SELECT id FROM roles WHERE nombre = 'cliente'");
     if (roles.length === 0) return error(res, "Role no encontrado", 400);
 
     const hash = await bcrypt.hash(password, 10);
 
     const [result] = await db.query(
-      `INSERT INTO usuarios (nombre, email, password, telefono, role_id)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO usuarios (nombre, email, password, telefono, role_id, perfil_completo)
+       VALUES (?, ?, ?, ?, ?, 0)`,
       [nombre, email, hash, telefono || null, roles[0].id],
     );
 
     const usuarioID = result.insertId;
 
-    if (role === "trabajador") {
-      const [trab] = await db.query("INSERT INTO trabajador (usuario_id) VALUES (?)", [usuarioID]);
-      const trabajador_id = trab.insertId;
-
-      // Guardar categorías seleccionadas
-      if (Array.isArray(req.body.categorias) && req.body.categorias.length > 0) {
-        const values = req.body.categorias.map((cat_id) => [trabajador_id, cat_id]);
-        await db.query("INSERT IGNORE INTO trabajador_categorias (trabajador_id, categoria_id) VALUES ?", [values]);
-      }
-    }
-
     const [usuario] = await db.query(
-      `SELECT u.id, u.email, r.nombre AS role_nombre
+      `SELECT u.id, u.email, u.perfil_completo, r.nombre AS role_nombre
        FROM usuarios u JOIN roles r ON u.role_id = r.id
        WHERE u.id = ?`,
       [usuarioID],
@@ -96,7 +80,7 @@ const register = async (req, res) => {
 
     return success(
       res,
-      { token, usuario: { id: usuarioID, nombre, email, role } },
+      { token, usuario: { id: usuarioID, nombre, email, role: "cliente", perfil_completo: 0 } },
       "Usuario registrado exitosamente",
       201,
     );

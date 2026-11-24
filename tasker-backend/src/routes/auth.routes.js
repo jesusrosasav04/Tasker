@@ -29,9 +29,6 @@ const registerRules = [
     .withMessage("La contraseña debe tener al menos 6 caracteres")
     .isLength({ max: 72 })
     .withMessage("Contraseña demasiado larga"),
-  body("role")
-    .isIn(["cliente", "trabajador"])
-    .withMessage("Rol inválido. Usa: cliente o trabajador"),
   body("telefono")
     .optional()
     .trim()
