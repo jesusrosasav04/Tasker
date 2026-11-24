@@ -48,7 +48,7 @@ const register = async (req, res) => {
 
   const rolesValidos = ["cliente", "trabajador"];
   if (!rolesValidos.includes(role)) {
-    return error(res, "Rol inválido. Usa: cliente o trabajador", 400);
+    return error(res, "Role inválido. Usa: cliente o trabajador", 400);
   }
 
   try {
@@ -61,7 +61,7 @@ const register = async (req, res) => {
     const [roles] = await db.query("SELECT id FROM roles WHERE nombre = ?", [
       role,
     ]);
-    if (roles.length === 0) return error(res, "Rol no encontrado", 400);
+    if (roles.length === 0) return error(res, "Role no encontrado", 400);
 
     const hash = await bcrypt.hash(password, 10);
 

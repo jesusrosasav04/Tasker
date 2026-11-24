@@ -159,7 +159,7 @@ export default function Login() {
                 to={redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
                 className="text-primary font-medium hover:underline"
               >
-                Crear cuenta
+                Regístrate
               </Link>
             </div>
           </div>

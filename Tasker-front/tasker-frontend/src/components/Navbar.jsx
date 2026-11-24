@@ -158,7 +158,7 @@ export default function Navbar() {
             <>
               <Link to="/login"
                 className="px-4 py-3 text-[15px] font-semibold text-tinta hover:text-primary">
-                Iniciar sesión
+                Entrar
               </Link>
               <Link to="/register"
                 className="rounded-full bg-primary px-5 py-3 text-[15px] font-semibold text-white transition hover:bg-primary-dark">
@@ -207,7 +207,7 @@ export default function Navbar() {
               <>
                 <Link to="/login" onClick={() => setOpen(false)}
                   className="rounded-2xl px-4 py-3 text-[15px] font-medium text-tinta hover:bg-white">
-                  Iniciar sesión
+                  Entrar
                 </Link>
                 <Link to="/register" onClick={() => setOpen(false)}
                   className="rounded-2xl bg-primary px-4 py-3 text-[15px] font-semibold text-white">

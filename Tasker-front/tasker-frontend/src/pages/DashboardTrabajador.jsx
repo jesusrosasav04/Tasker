@@ -125,7 +125,7 @@ function ModalPostularse({ tarea, onClose, onSuccess }) {
               onClick={onClose}
               className="flex-1 border border-arena text-stone-700 py-2.5 rounded-xl text-sm font-medium hover:bg-crema transition"
             >
-              Cerrar
+              Cancelar
             </button>
             <button
               type="submit"

@@ -89,7 +89,7 @@ export default function Register() {
 
           <div className="bg-white rounded-2xl shadow-sm border border-arena p-8">
             <h1 className="font-display text-2xl font-bold text-tinta mb-1">
-              {step === 1 ? "Crear cuenta" : "Perfil de especialista"}
+              {step === 1 ? "Crear cuenta" : "Perfil de trabajador"}
             </h1>
             <p className="text-piedra text-sm mb-6">
               {step === 1 ? "Completa tus datos para empezar" : "Cuéntanos sobre tus servicios"}
@@ -177,7 +177,7 @@ export default function Register() {
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { value: "cliente",    label: "🧑 Soy cliente",    desc: "Necesito servicios" },
-                      { value: "trabajador", label: "👷 Soy Especialista", desc: "Ofrezco servicios"  },
+                      { value: "trabajador", label: "👷 Soy trabajador", desc: "Ofrezco servicios"  },
                     ].map((r) => (
                       <button key={r.value} type="button"
                         onClick={() => setForm({ ...form, role: r.value })}
@@ -250,11 +250,11 @@ export default function Register() {
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setStep(1)}
                     className="flex-1 border border-arena text-stone-700 py-3 rounded-xl font-medium hover:bg-crema transition text-sm">
-                    Atrás
+                    ← Atrás
                   </button>
                   <button type="button" onClick={handleSubmit} disabled={loading}
                     className="bg-primary hover:bg-primary-dark flex-1 text-white py-3 rounded-xl font-medium transition disabled:opacity-50 text-sm">
-                     {loading ? "Creando cuenta..." : "Entrar a Tasker"}
+                    {loading ? "Creando cuenta..." : "Finalizar"}
                   </button>
                 </div>
               </div>
