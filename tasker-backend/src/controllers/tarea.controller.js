@@ -125,6 +125,10 @@ const tareasDisponibles = async (req, res) => {
 
     const verificado = perfil[0]?.verificado === 1;
 
+    // Sin verificar no puede postularse, así que tampoco recibe la lista:
+    // antes viajaba completa al navegador y solo se ocultaba en pantalla
+    if (!verificado) return success(res, { tareas: [], page, limit, verificado: false });
+
     const [tareas] = await pool.query(
       `SELECT 
          t.id, t.titulo, t.descripcion, t.presupuesto,

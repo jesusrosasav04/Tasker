@@ -33,7 +33,7 @@ const estadoTareaStyle = {
 
 const estadoPostStyle = {
   pendiente: { cls: "bg-stone-100 text-piedra",   label: "Pendiente" },
-  aceptada:  { cls: "bg-menta text-primary", label: "Aceptada ✓" },
+  aceptada:  { cls: "bg-menta text-primary", label: "Aceptada" },
   rechazada: { cls: "bg-red-100 text-red-500",     label: "Rechazada" },
 };
 

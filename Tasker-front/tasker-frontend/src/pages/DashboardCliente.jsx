@@ -120,8 +120,9 @@ function ModalCompletar({ tarea, onClose, onConfirmar }) {
         <p className="text-sm text-piedra text-center mb-2">
           Vas a aprobar el trabajo entregado de <span className="font-medium text-tinta">"{tarea.titulo}"</span>.
         </p>
-        <p className="text-xs text-amber-600 text-center bg-amber-50 rounded-lg px-3 py-2 mb-5">
-          ⚠️ Esta acción no se puede deshacer. Asegúrate de que el trabajo fue realizado correctamente.
+        <p className="text-xs leading-relaxed text-amber-700 text-center bg-amber-50 rounded-lg px-3 py-2 mb-5">
+          Revisa primero la foto que subió el especialista. Al aprobar confirmas que el trabajo se
+          hizo, y esta acción no se puede deshacer.
         </p>
         <div className="flex gap-3">
           <button onClick={onClose}
@@ -336,7 +337,7 @@ export default function DashboardCliente() {
         {/* Header */}
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="font-display text-2xl font-bold text-tinta">Hola, {user?.nombre} 👋</h1>
+            <h1 className="font-display text-3xl font-extrabold tracking-tight text-tinta">Hola, {user?.nombre?.split(" ")[0] || "cliente"}</h1>
             <p className="text-piedra mt-1">Gestiona tus solicitudes de servicio</p>
           </div>
           <div className="flex flex-wrap gap-2">

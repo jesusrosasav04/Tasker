@@ -267,7 +267,7 @@ function PanelDetalle({ tareaId, onClose, onEliminar, onEstadoCambiado }) {
                             <p className="text-xs text-stone-400">{p.trabajador_email}</p>
                           </div>
                           <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${postulacionEstilo[p.estado] || "bg-stone-100 text-piedra"}`}>
-                            {p.estado === "aceptada" ? "Aceptada ✓" : p.estado === "rechazada" ? "Rechazada" : "Pendiente"}
+                            {p.estado === "aceptada" ? "Aceptada" : p.estado === "rechazada" ? "Rechazada" : "Pendiente"}
                           </span>
                         </div>
                         {p.precio_propuesto && (
@@ -454,7 +454,7 @@ export default function AdminTareas() {
             </div>
 
             <p className="text-xs text-stone-400 mt-3 text-center">
-              💡 Haz clic en cualquier tarea para ver su detalle, postulaciones y cambiar su estado.
+              Haz clic en cualquier tarea para ver su detalle, postulaciones y cambiar su estado.
             </p>
 
         {/* Panel lateral de detalle */}

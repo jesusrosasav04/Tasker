@@ -172,7 +172,10 @@ function FormEntrega({ tareaId, onEntregado }) {
   return (
     <form onSubmit={enviar} className="space-y-3 rounded-xl border border-menta bg-teal-50/50 p-4">
       <p className="text-sm font-semibold text-tinta">Entregar trabajo</p>
-      <p className="text-xs text-piedra">Sube una foto del trabajo terminado. El cliente la revisará para aprobarlo.</p>
+      <p className="text-xs leading-relaxed text-piedra">
+        Sube una foto del trabajo terminado. El cliente la revisa para aprobarlo, y es tu respaldo:
+        si más adelante dice que no se hizo, la foto es lo que lo demuestra.
+      </p>
       <label className="block">
         <span className="sr-only">Foto del trabajo terminado</span>
         <input type="file" accept="image/jpeg,image/png,image/webp"
@@ -215,8 +218,10 @@ function BotonAprobar({ tareaId, onAprobado }) {
   return (
     <div className="space-y-2 rounded-xl border border-sky-200 bg-sky-50 p-4">
       <p className="text-sm font-semibold text-sky-900">El especialista entregó el trabajo</p>
-      <p className="text-xs text-sky-800">
-        Revisa la evidencia. Si todo quedó bien, apruébalo; si no, usa "Reportar problema".
+      <p className="text-xs leading-relaxed text-sky-800">
+        Compara la foto con lo que pediste. Al aprobar confirmas que el trabajo se hizo: se cierra la
+        tarea y podrás calificar y registrar el pago. Si algo no quedó bien, no apruebes y usa
+        "Reportar problema".
       </p>
       {!confirmar ? (
         <button onClick={() => setConfirmar(true)}
@@ -226,7 +231,9 @@ function BotonAprobar({ tareaId, onAprobado }) {
         </button>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-tinta">¿Confirmas? Esto cierra la tarea.</p>
+          <p className="text-xs font-medium text-tinta">
+            ¿Confirmas que el trabajo quedó bien? Después de aprobar ya no se puede deshacer.
+          </p>
           <div className="flex gap-2">
             <button onClick={() => setConfirmar(false)} disabled={enviando}
               className="flex-1 rounded-xl border border-arena bg-white py-2 text-sm font-medium text-stone-700 hover:bg-crema">
@@ -398,11 +405,20 @@ export default function DetalleTarea() {
                 </h2>
                 {tarea.entregado_at && (
                   <p className="mb-4 text-xs text-piedra">
-                    Entregado el {fechaCorta(tarea.entregado_at)}
-                    {tarea.aprobado_at && ` · aprobado el ${fechaCorta(tarea.aprobado_at)}`}
+                    Subida el {fechaCorta(tarea.entregado_at)}
+                    {tarea.aprobado_at && ` · aprobada por ti el ${fechaCorta(tarea.aprobado_at)}`}
                   </p>
                 )}
                 <EvidenciaGaleria evidencias={tarea.evidencias} />
+                {esCliente && (
+                  <p className="mt-4 rounded-xl bg-crema px-4 py-3 text-xs leading-relaxed text-piedra">
+                    <span className="font-semibold text-tinta">Por qué pedimos esta foto.</span>{" "}
+                    El especialista la sube antes de que tú apruebes, así los dos quedan respaldados:
+                    tú ves qué se hizo antes de pagar y él tiene cómo demostrarlo si después hay un
+                    desacuerdo. Si algo no quedó bien, no apruebes: reporta el problema y el equipo de
+                    Tasker revisa el caso con las fotos.
+                  </p>
+                )}
               </div>
             )}
 

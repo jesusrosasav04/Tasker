@@ -122,7 +122,7 @@ function SelectorMapa({ onSeleccionar, onCerrar, initialLat, initialLng }) {
 
         <div className="px-5 py-4 border-t border-arena flex items-center justify-between gap-3">
           <p className="text-xs text-stone-400">
-            💡 También puedes escribir la dirección manualmente sin usar el mapa
+            También puedes escribir la dirección manualmente sin usar el mapa
           </p>
           <div className="flex gap-2 flex-shrink-0">
             <button onClick={onCerrar}
@@ -316,7 +316,7 @@ export default function NuevaTarea() {
             <button type="button" onClick={() => setMostrarMapa(true)}
               className="flex items-center gap-2 text-sm font-medium text-primary border border-menta bg-menta px-4 py-2.5 rounded-xl hover:bg-menta transition w-full justify-center">
               <MapPin className="h-4 w-4" />
-              {form.latitud ? "📍 Ubicación en mapa seleccionada — cambiar" : "Seleccionar ubicación en el mapa"}
+              {form.latitud ? "Ubicación en mapa seleccionada — cambiar" : "Seleccionar ubicación en el mapa"}
             </button>
 
             {/* Vista previa miniatura si hay coords */}

@@ -63,6 +63,11 @@ async function statsTrabajador(usuarioId) {
     "SELECT COUNT(*) AS n FROM tareas WHERE trabajador_id = ? AND estado = 'completada'",
     [usuarioId],
   );
+  // En curso: asignadas pero aún sin aprobar por el cliente
+  const [[activos]] = await pool.query(
+    "SELECT COUNT(*) AS n FROM tareas WHERE trabajador_id = ? AND estado IN ('en_progreso', 'entregado')",
+    [usuarioId],
+  );
   const [[ingresos]] = await pool.query(
     "SELECT COALESCE(SUM(monto), 0) AS total FROM pagos WHERE trabajador_id = ? AND estado = 'completado'",
     [usuarioId],
@@ -93,6 +98,7 @@ async function statsTrabajador(usuarioId) {
     postulaciones: { total: totalPost, ...post },
     tasa_exito: totalPost > 0 ? Math.round((aceptadas / totalPost) * 100) : 0,
     trabajos_completados: Number(trabajos.n),
+    trabajos_activos: Number(activos.n),
     ingresos_total: Number(ingresos.total),
     calificaciones: Number(calif.n),
     calificacion_promedio: calif.promedio ? Number(Number(calif.promedio).toFixed(1)) : null,

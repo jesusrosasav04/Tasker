@@ -4,11 +4,28 @@ import { Menu, X, LogOut, User, Bell, LifeBuoy, Coins, BarChart3 } from "lucide-
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
-const navLinks = [
+// Visitantes: enlaces de la página pública. Con sesión iniciada esos enlaces
+// no sirven (el directorio de especialistas y "cómo funciona" son para convertir
+// visitas), así que cada rol ve los accesos de su propio trabajo.
+const LINKS_PUBLICOS = [
   { to: "/", label: "Inicio" },
   { to: "/proveedores", label: "Especialistas" },
   { to: "/#pasos", label: "Cómo funciona" },
 ];
+
+const LINKS_POR_ROL = {
+  cliente: [
+    { to: "/dashboard/cliente", label: "Mis tareas" },
+    { to: "/proveedores", label: "Especialistas" },
+    { to: "/dashboard/cliente/tareas/nueva", label: "Publicar tarea" },
+  ],
+  trabajador: [
+    { to: "/dashboard/trabajador?tab=disponibles", label: "Tareas disponibles" },
+    { to: "/dashboard/trabajador?tab=aceptadas", label: "Mis trabajos" },
+    { to: "/mi-plan", label: "Mi plan" },
+  ],
+  admin: [], // el panel de admin trae su propia navegación
+};
 
 function NotificacionesPanel({ onClose }) {
   const [notis, setNotis]   = useState([]);
@@ -57,7 +74,7 @@ function NotificacionesPanel({ onClose }) {
 }
 
 export default function Navbar() {
-  const { pathname }    = useLocation();
+  const { pathname, search } = useLocation();
   const navigate        = useNavigate();
   const { user, logout } = useAuth();
   const [open, setOpen]       = useState(false);
@@ -90,6 +107,17 @@ export default function Navbar() {
 
   const handleLogout = () => { logout(); navigate("/"); };
 
+  const navLinks = user ? LINKS_POR_ROL[user.role] || [] : LINKS_PUBLICOS;
+
+  // Un enlace con ?tab= está activo solo si ese es el tab abierto
+  const esActivo = (to) => {
+    const [ruta, query] = to.split("?");
+    if (ruta !== pathname) return false;
+    if (!query) return true;
+    const tab = new URLSearchParams(query).get("tab");
+    return tab === (new URLSearchParams(search).get("tab") || "disponibles");
+  };
+
   const dashboardLink =
     user?.role === "trabajador" ? "/dashboard/trabajador"
     : user?.role === "admin"    ? "/admin"
@@ -102,18 +130,20 @@ export default function Navbar() {
           tasker<span className="text-primary">.</span>
         </Link>
 
-        <div className="hidden items-center gap-1 rounded-full border border-arena bg-white p-1.5 md:flex">
-          {navLinks.map((link) => (
-            <Link key={link.to} to={link.to}
-              className={`rounded-full px-4 py-2 text-[15px] font-medium transition-colors ${
-                pathname === link.to
-                  ? "bg-tinta text-crema"
-                  : "text-stone-700 hover:bg-crema hover:text-tinta"
-              }`}>
-              {link.label}
-            </Link>
-          ))}
-        </div>
+        {navLinks.length > 0 && (
+          <div className="hidden items-center gap-1 rounded-full border border-arena bg-white p-1.5 md:flex">
+            {navLinks.map((link) => (
+              <Link key={link.to} to={link.to}
+                className={`rounded-full px-4 py-2 text-[15px] font-medium transition-colors ${
+                  esActivo(link.to)
+                    ? "bg-tinta text-crema"
+                    : "text-stone-700 hover:bg-crema hover:text-tinta"
+                }`}>
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Auth + notificaciones */}
         <div className="hidden items-center gap-2 md:flex">
@@ -193,17 +223,19 @@ export default function Navbar() {
             {navLinks.map((link) => (
               <Link key={link.to} to={link.to} onClick={() => setOpen(false)}
                 className={`rounded-2xl px-4 py-3 text-[15px] font-medium ${
-                  pathname === link.to ? "bg-tinta text-crema" : "text-stone-700 hover:bg-white"
+                  esActivo(link.to) ? "bg-tinta text-crema" : "text-stone-700 hover:bg-white"
                 }`}>
                 {link.label}
               </Link>
             ))}
             {user ? (
               <>
-                <Link to={dashboardLink} onClick={() => setOpen(false)}
-                  className="rounded-2xl px-4 py-3 text-[15px] font-medium text-tinta hover:bg-white">
-                  {user.role === "admin" ? "Panel admin" : "Mi panel"}
-                </Link>
+                {user.role === "admin" && (
+                  <Link to={dashboardLink} onClick={() => setOpen(false)}
+                    className="rounded-2xl px-4 py-3 text-[15px] font-medium text-tinta hover:bg-white">
+                    Panel admin
+                  </Link>
+                )}
                 {user.role !== "admin" && (
                   <Link to="/estadisticas" onClick={() => setOpen(false)}
                     className="rounded-2xl px-4 py-3 text-[15px] font-medium text-tinta hover:bg-white">

@@ -75,7 +75,7 @@ export default function PerfilTrabajador() {
                 <h1 className="font-display text-2xl font-bold text-tinta">{trabajador.nombre}</h1>
                 {trabajador.verificado === 1 && (
                   <span className="bg-menta text-primary text-xs font-medium px-2.5 py-1 rounded-full">
-                    Verificado ✓
+                    Verificado
                   </span>
                 )}
               </div>
@@ -94,7 +94,7 @@ export default function PerfilTrabajador() {
 
               <div className="flex flex-wrap gap-3 mt-3 text-sm text-piedra">
                 <span className="flex items-center gap-1">
-                  🗓 Miembro desde {new Date(trabajador.created_at).getFullYear()}
+                  Miembro desde {new Date(trabajador.created_at).getFullYear()}
                 </span>
               </div>
 
