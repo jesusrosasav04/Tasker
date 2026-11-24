@@ -86,18 +86,8 @@ router.get("/public-key", (req, res) => {
 });
 
 // Rutas Google OAuth
-router.get(
-  "/google",
-  (req, res, next) => {
-    const role = ["cliente", "trabajador"].includes(req.query.role)
-      ? req.query.role
-      : "cliente";
-    passport.authenticate("google", {
-      scope: ["profile", "email"],
-      state: role,
-    })(req, res, next);
-  }
-);
+// El rol ya no viaja aquí: el usuario nuevo lo elige en /bienvenida
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
 router.get(
   "/google/callback",
