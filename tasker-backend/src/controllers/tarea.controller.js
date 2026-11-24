@@ -1,6 +1,8 @@
 const pool = require("../config/db");
 const { success, error } = require("../utils/response");
 const { decrypt } = require("../config/encryption");
+const fs = require("fs");
+const { rutaArchivo } = require("../middlewares/upload.middleware");
 
 // POST /api/tareas — cliente crea una tarea
 const crearTarea = async (req, res) => {
@@ -147,25 +149,37 @@ const tareasDisponibles = async (req, res) => {
 };
 
 // PATCH /api/tareas/:id/completar 🔒 (cliente dueño)
+// Doble aprobación: el cliente solo aprueba lo que el trabajador ya entregó con evidencia
 const completarTarea = async (req, res) => {
   const cliente_id = req.user.id;
   const { id } = req.params;
 
   try {
     const [tareas] = await pool.query(
-      "SELECT id, estado, cliente_id FROM tareas WHERE id = ? AND cliente_id = ?",
+      "SELECT id, estado, cliente_id, trabajador_id FROM tareas WHERE id = ? AND cliente_id = ?",
       [id, cliente_id]
     );
 
     if (tareas.length === 0)
       return error(res, "Tarea no encontrada o no tienes permiso", 404);
 
-    if (tareas[0].estado !== "en_progreso")
-      return error(res, "Solo puedes completar tareas en progreso", 400);
+    if (tareas[0].estado === "en_progreso")
+      return error(res, "El especialista aún no entrega el trabajo con evidencia", 400);
 
-    await pool.query("UPDATE tareas SET estado = 'completada' WHERE id = ?", [id]);
+    if (tareas[0].estado !== "entregado")
+      return error(res, "Solo puedes aprobar trabajos entregados", 400);
 
-    return success(res, null, "Tarea marcada como completada");
+    await pool.query(
+      "UPDATE tareas SET estado = 'completada', aprobado_at = NOW() WHERE id = ?",
+      [id]
+    );
+
+    if (tareas[0].trabajador_id) {
+      const { crearNotificacion } = require("./notificacion.controller");
+      crearNotificacion(tareas[0].trabajador_id, `El cliente aprobó tu trabajo de la tarea #${id}. ¡Buen trabajo!`);
+    }
+
+    return success(res, null, "Trabajo aprobado. Ya puedes calificar y registrar el pago.");
   } catch (err) {
     console.error(err);
     return error(res, "Error al completar la tarea", 500);
@@ -182,7 +196,7 @@ const getTareaById = async (req, res) => {
       `SELECT
         t.id, t.titulo, t.descripcion, t.presupuesto,
         t.ubicacion, t.latitud, t.longitud,
-        t.estado, t.created_at,
+        t.estado, t.created_at, t.entregado_at, t.aprobado_at,
         c.nombre AS categoria,
         u.id AS cliente_id, u.nombre AS cliente_nombre, u.email AS cliente_email,
         u.telefono AS cliente_telefono
@@ -231,8 +245,15 @@ const getTareaById = async (req, res) => {
       [id]
     );
 
+    // Evidencia de entrega (fotos del trabajo terminado)
+    const [evidencias] = await pool.query(
+      "SELECT id, nota, created_at FROM evidencias WHERE tarea_id = ? ORDER BY created_at ASC",
+      [id]
+    );
+
     return success(res, {
       ...tarea,
+      evidencias,
       trabajador: trabajadorAsignado[0] || null,
       calificacion: calificacion[0]
         ? { ...calificacion[0], comentario: decrypt(calificacion[0].comentario) }
@@ -323,6 +344,9 @@ const cancelarTarea = async (req, res) => {
     if (tareas[0].estado === "cancelada")
       return error(res, "Esta tarea ya fue cancelada", 400);
 
+    if (tareas[0].estado === "entregado")
+      return error(res, "El especialista ya entregó el trabajo: apruébalo o reporta un problema", 400);
+
     await pool.query("UPDATE tareas SET estado = 'cancelada' WHERE id = ?", [id]);
 
     // Notificar al trabajador asignado si había uno
@@ -343,4 +367,65 @@ const cancelarTarea = async (req, res) => {
     return error(res, "Error al cancelar la tarea", 500);
   }
 };
-module.exports = { crearTarea, misTareas, tareasDisponibles, completarTarea, getTareaById, actualizarTarea, cancelarTarea };
+// POST /api/tareas/:id/entregar — el trabajador asignado entrega con evidencia (foto obligatoria)
+const entregarTarea = async (req, res) => {
+  const trabajador_id = req.user.id;
+  const { id } = req.params;
+  const nota = (req.body.nota || "").trim() || null;
+
+  if (!req.file) return error(res, "Adjunta una foto del trabajo terminado", 400);
+  const url = `evidencias/${req.file.filename}`;
+
+  try {
+    const [[tarea]] = await pool.query(
+      "SELECT id, estado, cliente_id, trabajador_id FROM tareas WHERE id = ?",
+      [id]
+    );
+    if (!tarea) return error(res, "Tarea no encontrada", 404);
+    if (tarea.trabajador_id !== trabajador_id)
+      return error(res, "Solo el especialista asignado puede entregar esta tarea", 403);
+    if (tarea.estado !== "en_progreso")
+      return error(res, "Solo puedes entregar tareas en progreso", 400);
+
+    await pool.query("INSERT INTO evidencias (tarea_id, url, nota) VALUES (?, ?, ?)", [id, url, nota]);
+    await pool.query("UPDATE tareas SET estado = 'entregado', entregado_at = NOW() WHERE id = ?", [id]);
+
+    const { crearNotificacion } = require("./notificacion.controller");
+    crearNotificacion(tarea.cliente_id, `El especialista entregó la tarea #${id}. Revisa la evidencia y apruébala.`);
+
+    return success(res, null, "Trabajo entregado. El cliente revisará la evidencia.");
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al entregar la tarea", 500);
+  }
+};
+
+// GET /api/tareas/evidencias/:evid/archivo — foto protegida (cliente, trabajador asignado o admin)
+const getEvidenciaArchivo = async (req, res) => {
+  const { evid } = req.params;
+  try {
+    const [[ev]] = await pool.query(
+      `SELECT e.url, t.cliente_id, t.trabajador_id
+       FROM evidencias e JOIN tareas t ON t.id = e.tarea_id
+       WHERE e.id = ?`,
+      [evid]
+    );
+    if (!ev) return error(res, "Evidencia no encontrada", 404);
+
+    const u = req.user;
+    if (u.role !== "admin" && u.id !== ev.cliente_id && u.id !== ev.trabajador_id)
+      return error(res, "No tienes acceso a esta evidencia", 403);
+
+    const abs = rutaArchivo(ev.url);
+    if (!abs || !fs.existsSync(abs)) return error(res, "Archivo no disponible", 404);
+    return res.sendFile(abs);
+  } catch (err) {
+    console.error(err);
+    return error(res, "Error al obtener la evidencia", 500);
+  }
+};
+
+module.exports = {
+  crearTarea, misTareas, tareasDisponibles, completarTarea, getTareaById,
+  actualizarTarea, cancelarTarea, entregarTarea, getEvidenciaArchivo,
+};

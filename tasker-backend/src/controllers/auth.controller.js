@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken"); // ← debe estar ARRIBA
 const db = require("../config/db");
 const { success, error } = require("../utils/response");
+const { normalizarTelefono, telefonoEnUso, mensajeDuplicado } = require("../utils/identidad");
 
 // ── Helper: cookie segura con JWT ────────────────────
 const JWT_COOKIE = "jwt_token";
@@ -53,6 +54,11 @@ const register = async (req, res) => {
     if (existe.length > 0)
       return error(res, "El email ya está registrado", 409);
 
+    // Un teléfono = una cuenta
+    const tel = telefono ? normalizarTelefono(telefono) : null;
+    if (tel && (await telefonoEnUso(db, tel)))
+      return error(res, "Este teléfono ya está registrado en otra cuenta", 409);
+
     // Igual que Google: nace como cliente provisional con perfil_completo = 0
     // y elige su rol real en /bienvenida (POST /auth/completar-perfil)
     const [roles] = await db.query("SELECT id FROM roles WHERE nombre = 'cliente'");
@@ -61,9 +67,9 @@ const register = async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
 
     const [result] = await db.query(
-      `INSERT INTO usuarios (nombre, email, password, telefono, role_id, perfil_completo)
-       VALUES (?, ?, ?, ?, ?, 0)`,
-      [nombre, email, hash, telefono || null, roles[0].id],
+      `INSERT INTO usuarios (nombre, email, password, telefono, role_id, perfil_completo, privacidad_aceptada_at)
+       VALUES (?, ?, ?, ?, ?, 0, NOW())`,
+      [nombre, email, hash, tel, roles[0].id],
     );
 
     const usuarioID = result.insertId;
@@ -80,11 +86,13 @@ const register = async (req, res) => {
 
     return success(
       res,
-      { token, usuario: { id: usuarioID, nombre, email, role: "cliente", perfil_completo: 0 } },
+      { token, usuario: { id: usuarioID, nombre, email, role: "cliente", perfil_completo: 0, privacidad_aceptada: 1 } },
       "Usuario registrado exitosamente",
       201,
     );
   } catch (err) {
+    const dup = mensajeDuplicado(err);
+    if (dup) return error(res, dup, 409);
     console.error("Error en register:", err);
     return error(res, "Error interno del servidor", 500);
   }
@@ -120,6 +128,7 @@ const login = async (req, res) => {
         email: usuario.email,
         role: usuario.role_nombre,
         perfil_completo: usuario.perfil_completo,
+        privacidad_aceptada: usuario.privacidad_aceptada_at ? 1 : 0,
       },
     });
   } catch (err) {
@@ -132,7 +141,8 @@ const login = async (req, res) => {
 const me = async (req, res) => {
   try {
     const [usuarios] = await db.query(
-      `SELECT u.id, u.nombre, u.email, u.telefono, u.created_at, u.perfil_completo, r.nombre AS role
+      `SELECT u.id, u.nombre, u.email, u.telefono, u.created_at, u.perfil_completo,
+              (u.privacidad_aceptada_at IS NOT NULL) AS privacidad_aceptada, r.nombre AS role
        FROM usuarios u JOIN roles r ON u.role_id = r.id
        WHERE u.id = ? AND u.estado = 1`,
       [req.user.id],
@@ -142,11 +152,21 @@ const me = async (req, res) => {
 
     // El formulario "Mi perfil" precarga estos datos; sin ellos, guardar borraba descripción y categorías
     if (usuarios[0].role === "trabajador") {
-      const [[perfil]] = await db.query("SELECT id, descripcion FROM trabajador WHERE usuario_id = ?", [req.user.id]);
+      const [[perfil]] = await db.query("SELECT id, descripcion, curp, verificado FROM trabajador WHERE usuario_id = ?", [req.user.id]);
       if (perfil) {
         const [cats] = await db.query("SELECT categoria_id FROM trabajador_categorias WHERE trabajador_id = ?", [perfil.id]);
+        // Estado de la identificación oficial (documentos.trabajador_id = usuarios.id)
+        const [[ine]] = await db.query(
+          `SELECT COUNT(*) AS subidas, COALESCE(SUM(verificado = 1), 0) AS verificadas
+           FROM documentos WHERE trabajador_id = ? AND tipo = 'identificacion'`,
+          [req.user.id],
+        );
         usuarios[0].descripcion = perfil.descripcion;
         usuarios[0].categorias_ids = cats.map((c) => c.categoria_id);
+        usuarios[0].curp = perfil.curp;
+        usuarios[0].verificado = perfil.verificado;
+        usuarios[0].identificacion =
+          Number(ine.verificadas) > 0 ? "verificada" : Number(ine.subidas) > 0 ? "en_revision" : "ninguna";
       }
     }
 
@@ -197,7 +217,7 @@ const completarPerfil = async (req, res) => {
 
     // FOR UPDATE: dos envíos simultáneos no crean dos perfiles de trabajador
     const [[usuario]] = await conn.query(
-      "SELECT id, email, perfil_completo FROM usuarios WHERE id = ? AND estado = 1 FOR UPDATE",
+      "SELECT id, email, perfil_completo, privacidad_aceptada_at FROM usuarios WHERE id = ? AND estado = 1 FOR UPDATE",
       [req.user.id],
     );
     if (!usuario) {
@@ -209,6 +229,12 @@ const completarPerfil = async (req, res) => {
     if (usuario.perfil_completo === 1) {
       await conn.rollback();
       return error(res, "El perfil ya fue configurado", 409);
+    }
+
+    // Quien entró con Google aún no ha aceptado el aviso de privacidad
+    if (!usuario.privacidad_aceptada_at && req.body.acepta_privacidad !== true) {
+      await conn.rollback();
+      return error(res, "Debes aceptar el aviso de privacidad para continuar", 400);
     }
 
     const [[rol]] = await conn.query("SELECT id FROM roles WHERE nombre = ?", [role]);
@@ -241,7 +267,9 @@ const completarPerfil = async (req, res) => {
     }
 
     await conn.query(
-      "UPDATE usuarios SET role_id = ?, perfil_completo = 1 WHERE id = ?",
+      `UPDATE usuarios SET role_id = ?, perfil_completo = 1,
+         privacidad_aceptada_at = COALESCE(privacidad_aceptada_at, NOW())
+       WHERE id = ?`,
       [rol.id, req.user.id],
     );
     await conn.commit();

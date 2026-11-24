@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, LogOut, User, Bell, LifeBuoy } from "lucide-react";
+import { Menu, X, LogOut, User, Bell, LifeBuoy, Coins, BarChart3 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
@@ -137,6 +137,18 @@ export default function Navbar() {
               </div>
 
               {user.role !== "admin" && (
+                <Link to="/estadisticas" aria-label="Mis estadísticas" title="Mis estadísticas"
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-stone-600 transition hover:bg-white">
+                  <BarChart3 className="h-5 w-5" />
+                </Link>
+              )}
+              {user.role === "trabajador" && (
+                <Link to="/mi-plan" aria-label="Mi plan y créditos" title="Mi plan y créditos"
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-stone-600 transition hover:bg-white">
+                  <Coins className="h-5 w-5" />
+                </Link>
+              )}
+              {user.role !== "admin" && (
                 <Link to="/soporte" aria-label="Soporte" title="Soporte"
                   className="flex h-11 w-11 items-center justify-center rounded-full text-stone-600 transition hover:bg-white">
                   <LifeBuoy className="h-5 w-5" />
@@ -192,6 +204,18 @@ export default function Navbar() {
                   className="rounded-2xl px-4 py-3 text-[15px] font-medium text-tinta hover:bg-white">
                   {user.role === "admin" ? "Panel admin" : "Mi panel"}
                 </Link>
+                {user.role !== "admin" && (
+                  <Link to="/estadisticas" onClick={() => setOpen(false)}
+                    className="rounded-2xl px-4 py-3 text-[15px] font-medium text-tinta hover:bg-white">
+                    Mis estadísticas
+                  </Link>
+                )}
+                {user.role === "trabajador" && (
+                  <Link to="/mi-plan" onClick={() => setOpen(false)}
+                    className="rounded-2xl px-4 py-3 text-[15px] font-medium text-tinta hover:bg-white">
+                    Mi plan y créditos
+                  </Link>
+                )}
                 {user.role !== "admin" && (
                   <Link to="/soporte" onClick={() => setOpen(false)}
                     className="rounded-2xl px-4 py-3 text-[15px] font-medium text-tinta hover:bg-white">

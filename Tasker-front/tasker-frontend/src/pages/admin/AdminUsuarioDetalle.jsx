@@ -25,6 +25,7 @@ import AdminLayout from "./AdminLayout";
 const estadoTareaStyle = {
   pendiente:   { cls: "bg-stone-100 text-piedra",   label: "Pendiente" },
   en_progreso: { cls: "bg-amber-100 text-amber-700", label: "En progreso" },
+  entregado:   { cls: "bg-sky-100 text-sky-800",     label: "Entregado" },
   completada:  { cls: "bg-menta text-primary", label: "Completada" },
   cancelada:   { cls: "bg-red-100 text-red-500",     label: "Cancelada" },
   disputa:     { cls: "bg-red-50 text-red-700",      label: "En disputa" },

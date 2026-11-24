@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
-import { Briefcase, CheckCircle, XCircle, Phone, Mail, Tag, FileText } from "lucide-react";
+import { Briefcase, CheckCircle, XCircle, Phone, Mail, Tag, FileText, IdCard, Circle } from "lucide-react";
 import api from "../../api/axios";
 import SkeletonLista from "../../components/Skeleton";
 import { abrirDocumento, TIPOS_DOCUMENTO } from "../../api/archivos";
 import AdminLayout from "./AdminLayout";
 
+
+// Mismos requisitos que valida el backend antes de aprobar
+const requisitos = (t) => [
+  { label: "CURP", ok: !!t.curp },
+  { label: "Teléfono", ok: !!t.telefono },
+  { label: "INE verificada", ok: !!t.documentos?.some((d) => d.tipo === "identificacion" && d.verificado) },
+];
 
 export default function AdminTrabajadores() {
   const [trabajadores, setTrabajadores] = useState([]);
@@ -91,6 +98,8 @@ export default function AdminTrabajadores() {
             <div className="divide-y divide-arena">
               {trabajadores.map((t) => {
                 const enProceso = procesando === t.trabajador_id;
+                const reqs = requisitos(t);
+                const faltan = reqs.filter((r) => !r.ok).map((r) => r.label);
                 return (
                   <div key={t.trabajador_id} className="px-6 py-5">
                     <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
@@ -125,6 +134,12 @@ export default function AdminTrabajadores() {
                               {t.telefono}
                             </div>
                           )}
+                          {t.curp && (
+                            <div className="flex items-center gap-2 text-sm text-piedra">
+                              <IdCard className="h-3.5 w-3.5 text-stone-400" />
+                              <span className="font-mono tracking-wide">{t.curp}</span>
+                            </div>
+                          )}
                           {t.categorias && (
                             <div className="flex items-start gap-2 text-sm text-piedra">
                               <Tag className="h-3.5 w-3.5 text-stone-400 mt-0.5 flex-shrink-0" />
@@ -136,6 +151,19 @@ export default function AdminTrabajadores() {
                               "{t.descripcion}"
                             </p>
                           )}
+
+                          {/* Requisitos de identidad */}
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {reqs.map((r) => (
+                              <span key={r.label}
+                                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                  r.ok ? "bg-menta text-menta-dark" : "bg-crema text-piedra border border-arena"
+                                }`}>
+                                {r.ok ? <CheckCircle className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
+                                {r.label}
+                              </span>
+                            ))}
+                          </div>
 
                           {/* Documentos subidos */}
                           <div className="mt-3">
@@ -173,8 +201,9 @@ export default function AdminTrabajadores() {
                           onClick={() =>
                             handleAccion(t.trabajador_id, "aprobar")
                           }
-                          disabled={enProceso}
-                          className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary-dark transition disabled:opacity-50"
+                          disabled={enProceso || faltan.length > 0}
+                          title={faltan.length ? `Falta: ${faltan.join(", ")}` : undefined}
+                          className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium enabled:hover:bg-primary-dark transition disabled:opacity-50"
                         >
                           <CheckCircle className="h-4 w-4" />
                           {enProceso ? "..." : "Aprobar"}

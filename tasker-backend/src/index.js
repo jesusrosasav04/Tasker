@@ -58,6 +58,8 @@ app.use("/api/documentos", require("./routes/documento.routes"));
 app.use("/api/usuarios", require("./routes/usuario.routes"));
 app.use("/api/reportes", require("./routes/reporte.routes"));
 app.use("/api/admin", require("./routes/admin.routes"));
+app.use("/api/creditos", require("./routes/credito.routes"));
+app.use("/api/estadisticas", require("./routes/estadistica.routes"));
 
 app.use((err, req, res, next) => {
   if (err.message?.includes("CORS")) {

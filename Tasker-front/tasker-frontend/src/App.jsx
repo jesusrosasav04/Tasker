@@ -28,6 +28,9 @@ const AdminTrabajadores = lazy(() => import("./pages/admin/AdminTrabajadores"));
 const AdminTareas = lazy(() => import("./pages/admin/AdminTareas"));
 const AdminCategorias = lazy(() => import("./pages/admin/AdminCategorias"));
 const MisPagos = lazy(() => import("./pages/MisPagos"));
+const MiPlan = lazy(() => import("./pages/MiPlan"));
+const Estadisticas = lazy(() => import("./pages/Estadisticas"));
+const AvisoPrivacidad = lazy(() => import("./pages/AvisoPrivacidad"));
 const RecuperarPassword = lazy(() => import("./pages/RecuperarPassword"));
 const RestablecerPassword = lazy(() => import("./pages/RestablecerPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -40,7 +43,8 @@ function App() {
   // Usuario de Google que aún no elige rol: queda "encerrado" en la bienvenida
   const onboarding = !!user && user.perfil_completo === 0;
 
-  if (onboarding && location.pathname !== "/bienvenida") {
+  // El aviso de privacidad se puede leer antes de aceptarlo
+  if (onboarding && !["/bienvenida", "/privacidad"].includes(location.pathname)) {
     return <Navigate to="/bienvenida" replace />;
   }
   // Quien ya eligió rol no tiene nada que hacer en la bienvenida
@@ -69,6 +73,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/recuperar" element={<RecuperarPassword />} />
         <Route path="/restablecer" element={<RestablecerPassword />} />
+        <Route path="/privacidad" element={<AvisoPrivacidad />} />
         <Route
           path="/pagos"
           element={
@@ -125,6 +130,22 @@ function App() {
           element={
             <ProtectedRoute roles={["trabajador"]}>
               <DashboardTrabajador />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/estadisticas"
+          element={
+            <ProtectedRoute roles={["cliente", "trabajador"]}>
+              <Estadisticas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mi-plan"
+          element={
+            <ProtectedRoute roles={["trabajador"]}>
+              <MiPlan />
             </ProtectedRoute>
           }
         />

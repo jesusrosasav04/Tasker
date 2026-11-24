@@ -25,6 +25,7 @@ const estadoPostulacionStyle = {
 const estadoTareaStyle = {
   pendiente: "bg-stone-100 text-piedra",
   en_progreso: "bg-amber-100 text-amber-700",
+  entregado: "bg-sky-100 text-sky-800",
   completada: "bg-menta text-primary",
   cancelada: "bg-red-100 text-red-500",
   disputa: "bg-red-50 text-red-700",
@@ -36,10 +37,12 @@ function ModalPostularse({ tarea, onClose, onSuccess }) {
   const [form, setForm] = useState({ mensaje: "", precio_propuesto: "" });
   const [loading, setLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
+  const [sinCreditos, setSinCreditos] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrMsg("");
+    setSinCreditos(false);
     setLoading(true);
     try {
       await api.post("/postulaciones", {
@@ -56,6 +59,10 @@ function ModalPostularse({ tarea, onClose, onSuccess }) {
         setErrMsg("Ya te postulaste a esta tarea anteriormente.");
       else if (status === 429)
         setErrMsg("Demasiadas solicitudes, intenta más tarde.");
+      else if (status === 402) {
+        setErrMsg(err.response?.data?.error || "Te quedaste sin postulaciones disponibles.");
+        setSinCreditos(true);
+      }
       else
         setErrMsg(err.response?.data?.error || "Error al enviar postulación.");
     } finally {
@@ -117,6 +124,11 @@ function ModalPostularse({ tarea, onClose, onSuccess }) {
           {errMsg && (
             <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
               {errMsg}
+              {sinCreditos && (
+                <Link to="/mi-plan" className="mt-2 block font-semibold underline">
+                  Comprar créditos
+                </Link>
+              )}
             </div>
           )}
           <div className="flex gap-3 pt-1">
@@ -388,7 +400,7 @@ function TabTareasAceptadas() {
               <span
                 className={`text-xs font-medium px-2.5 py-1 rounded-full ${estadoTareaStyle[t.estado] || "bg-stone-100 text-piedra"}`}
               >
-                {t.estado?.replace("_", " ")}
+                {t.estado === "entregado" ? "entregado · por aprobar" : t.estado?.replace("_", " ")}
               </span>
               {t.precio_propuesto && (
                 <span className="text-sm font-semibold text-primary">
@@ -407,7 +419,7 @@ function TabTareasAceptadas() {
                 className="bg-primary hover:bg-primary-dark flex items-center gap-1.5 text-xs font-medium text-white px-3 py-1.5 rounded-lg transition"
               >
                 <Eye className="h-3.5 w-3.5" />
-                Ver detalle
+                {t.estado === "en_progreso" ? "Entregar trabajo" : "Ver detalle"}
               </Link>
             </div>
           </div>

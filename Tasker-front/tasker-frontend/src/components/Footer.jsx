@@ -18,6 +18,7 @@ export default function Footer() {
             <Link to="/proveedores" className="hover:text-crema">Especialistas</Link>
             <Link to="/register" className="hover:text-crema">Ofrece tus servicios</Link>
             <Link to="/login" className="hover:text-crema">Iniciar sesión</Link>
+            <Link to="/privacidad" className="hover:text-crema">Aviso de privacidad</Link>
           </nav>
           <p className="text-sm text-stone-400">© {new Date().getFullYear()} Tasker</p>
         </div>

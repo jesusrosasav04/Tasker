@@ -14,6 +14,7 @@ const ESTADOS = [
   { value: "",        label: "Todos" },
   { value: "pendiente",   label: "Pendiente" },
   { value: "en_progreso", label: "En progreso" },
+  { value: "entregado",   label: "Entregado (por aprobar)" },
   { value: "completada",  label: "Completada" },
   { value: "cancelada",   label: "Cancelada" },
   { value: "disputa",     label: "En disputa" },
@@ -22,6 +23,7 @@ const ESTADOS = [
 const estadoStyle = {
   pendiente:   { cls: "bg-stone-100 text-piedra",   label: "Pendiente" },
   en_progreso: { cls: "bg-amber-100 text-amber-700", label: "En progreso" },
+  entregado:   { cls: "bg-sky-100 text-sky-800",     label: "Entregado" },
   completada:  { cls: "bg-menta text-primary", label: "Completada" },
   cancelada:   { cls: "bg-red-100 text-red-500",     label: "Cancelada" },
   disputa:     { cls: "bg-red-50 text-red-700",      label: "En disputa" },

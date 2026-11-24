@@ -32,7 +32,7 @@ const registrarPago = async (req, res) => {
     if (tareas.length === 0)
       return error(res, "Tarea no encontrada o no tienes permiso", 404);
 
-    if (!["en_progreso", "completada"].includes(tareas[0].estado))
+    if (!["en_progreso", "entregado", "completada"].includes(tareas[0].estado))
       return error(res, "Solo puedes registrar pagos de tareas en progreso o completadas", 400);
 
     // Verificar que no existe ya un pago para esta tarea

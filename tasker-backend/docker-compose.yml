@@ -17,6 +17,9 @@ services:
       - ./scripts/01_password_resets.sql:/docker-entrypoint-initdb.d/02-password_resets.sql:ro
       - ./scripts/02_reportes_soporte.sql:/docker-entrypoint-initdb.d/03-reportes_soporte.sql:ro
       - ./scripts/03_onboarding_google.sql:/docker-entrypoint-initdb.d/04-onboarding_google.sql:ro
+      - ./scripts/04_creditos.sql:/docker-entrypoint-initdb.d/05-creditos.sql:ro
+      - ./scripts/05_evidencias.sql:/docker-entrypoint-initdb.d/06-evidencias.sql:ro
+      - ./scripts/06_identidad.sql:/docker-entrypoint-initdb.d/07-identidad.sql:ro
 
 volumes:
   tasker-data:

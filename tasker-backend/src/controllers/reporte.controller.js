@@ -5,7 +5,7 @@ const { encrypt, decrypt } = require("../config/encryption");
 const { rutaArchivo } = require("../middlewares/upload.middleware");
 const { crearNotificacion } = require("./notificacion.controller");
 
-const ESTADOS_DISPUTABLES = ["en_progreso", "completada"];
+const ESTADOS_DISPUTABLES = ["en_progreso", "entregado", "completada"];
 
 const notificarAdmins = async (mensaje) => {
   const [admins] = await db.query(

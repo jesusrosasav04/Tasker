@@ -70,6 +70,7 @@ const getTrabajadoresPendientes = async (req, res) => {
         t.id AS trabajador_id,
         t.descripcion,
         t.verificado,
+        t.curp,
         u.created_at,
         u.id AS usuario_id,
         u.nombre,
@@ -113,7 +114,9 @@ const verificarTrabajador = async (req, res) => {
 
   try {
     const [trabajador] = await db.query(
-      `SELECT id FROM trabajador WHERE id = ?`,
+      `SELECT t.id, t.usuario_id, t.curp, u.telefono
+       FROM trabajador t JOIN usuarios u ON u.id = t.usuario_id
+       WHERE t.id = ?`,
       [id],
     );
 
@@ -121,7 +124,23 @@ const verificarTrabajador = async (req, res) => {
       return error(res, "Trabajador no encontrado", 404);
 
     if (accion === "aprobar") {
+      // Requisitos de identidad: CURP, teléfono e INE revisada por un admin
+      const t = trabajador[0];
+      const [[ine]] = await db.query(
+        `SELECT COUNT(*) AS n FROM documentos
+         WHERE trabajador_id = ? AND tipo = 'identificacion' AND verificado = 1`,
+        [t.usuario_id],
+      );
+      const faltan = [];
+      if (!t.curp) faltan.push("CURP");
+      if (!t.telefono) faltan.push("teléfono");
+      if (!ine.n) faltan.push("identificación oficial verificada");
+      if (faltan.length > 0)
+        return error(res, `No se puede aprobar todavía. Falta: ${faltan.join(", ")}.`, 409);
+
       await db.query(`UPDATE trabajador SET verificado = 1 WHERE id = ?`, [id]);
+      const { crearNotificacion } = require("./notificacion.controller");
+      crearNotificacion(t.usuario_id, "¡Tu perfil fue verificado! Ya puedes postularte a tareas.");
       return success(res, null, "Trabajador verificado correctamente");
     } else {
       await db.query(
@@ -293,7 +312,7 @@ const eliminarTarea = async (req, res) => {
       return error(res, "Esta tarea está en disputa: resuélvela desde Reportes", 400);
 
     // No permitir eliminar tareas en progreso
-    if (tarea[0].estado === "en_progreso")
+    if (["en_progreso", "entregado"].includes(tarea[0].estado))
       return error(
         res,
         "No puedes eliminar una tarea en progreso. Cancélala primero.",
@@ -316,7 +335,7 @@ const cambiarEstadoTarea = async (req, res) => {
   const { id } = req.params;
   const { estado } = req.body;
 
-  const estadosValidos = ["pendiente", "en_progreso", "completada", "cancelada"];
+  const estadosValidos = ["pendiente", "en_progreso", "entregado", "completada", "cancelada"];
   if (!estadosValidos.includes(estado))
     return error(res, "Estado inválido", 400);
 

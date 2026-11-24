@@ -3,12 +3,13 @@ import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft, MapPin, DollarSign, Tag, User,
   Calendar, CheckCircle, Clock, MessageSquare,
-  Star, ExternalLink, Flag,
+  Star, ExternalLink, Flag, Camera, Hourglass,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import SkeletonLista from "../components/Skeleton";
 import ModalReporte from "../components/ModalReporte";
+import { urlProtegida } from "../api/archivos";
 
 // ── Carga Leaflet desde CDN ───────────────────────────
 function useLeaflet() {
@@ -99,11 +100,149 @@ function MapaUbicacion({ lat, lng, titulo }) {
 const estadoStyle = {
   pendiente:   { cls: "bg-stone-100 text-piedra",   label: "Pendiente" },
   en_progreso: { cls: "bg-amber-100 text-amber-700", label: "En progreso" },
+  entregado:   { cls: "bg-sky-100 text-sky-800",     label: "Entregado · por aprobar" },
   completada:  { cls: "bg-menta text-primary", label: "Completada" },
   cancelada:   { cls: "bg-red-100 text-red-500",     label: "Cancelada" },
   disputa:     { cls: "bg-red-50 text-red-700",      label: "En disputa" },
 };
 
+
+// ── Evidencia de entrega (fotos protegidas por token) ─
+function EvidenciaGaleria({ evidencias }) {
+  const [urls, setUrls] = useState({});
+
+  useEffect(() => {
+    let vivo = true;
+    const creadas = [];
+    Promise.all(
+      evidencias.map((e) =>
+        urlProtegida(`/tareas/evidencias/${e.id}/archivo`)
+          .then((u) => { creadas.push(u); return [e.id, u]; })
+          .catch(() => [e.id, null])
+      )
+    ).then((pares) => { if (vivo) setUrls(Object.fromEntries(pares)); });
+    return () => { vivo = false; creadas.forEach((u) => URL.revokeObjectURL(u)); };
+  }, [evidencias]);
+
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {evidencias.map((e) => (
+        <figure key={e.id} className="overflow-hidden rounded-xl border border-arena bg-crema">
+          {urls[e.id] ? (
+            <a href={urls[e.id]} target="_blank" rel="noreferrer" title="Ver en grande">
+              <img src={urls[e.id]} alt="Evidencia del trabajo terminado" className="aspect-square w-full object-cover" />
+            </a>
+          ) : (
+            <div className="flex aspect-square items-center justify-center text-xs text-stone-400">
+              {urls[e.id] === null ? "No disponible" : "Cargando…"}
+            </div>
+          )}
+          {e.nota && <figcaption className="px-3 py-2 text-xs text-piedra">{e.nota}</figcaption>}
+        </figure>
+      ))}
+    </div>
+  );
+}
+
+// ── Trabajador: entregar con foto ─────────────────────
+function FormEntrega({ tareaId, onEntregado }) {
+  const [foto, setFoto] = useState(null);
+  const [nota, setNota] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [err, setErr] = useState("");
+
+  const enviar = async (e) => {
+    e.preventDefault();
+    if (!foto) { setErr("Adjunta una foto del trabajo terminado."); return; }
+    setErr("");
+    setEnviando(true);
+    try {
+      const fd = new FormData();
+      fd.append("foto", foto);
+      if (nota.trim()) fd.append("nota", nota.trim());
+      await api.post(`/tareas/${tareaId}/entregar`, fd);
+      onEntregado();
+    } catch (e2) {
+      setErr(e2.response?.data?.error || "No se pudo entregar el trabajo.");
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <form onSubmit={enviar} className="space-y-3 rounded-xl border border-menta bg-teal-50/50 p-4">
+      <p className="text-sm font-semibold text-tinta">Entregar trabajo</p>
+      <p className="text-xs text-piedra">Sube una foto del trabajo terminado. El cliente la revisará para aprobarlo.</p>
+      <label className="block">
+        <span className="sr-only">Foto del trabajo terminado</span>
+        <input type="file" accept="image/jpeg,image/png,image/webp"
+          onChange={(e) => setFoto(e.target.files?.[0] || null)}
+          className="block w-full text-xs text-piedra file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-2 file:text-xs file:font-medium file:text-white" />
+      </label>
+      <label className="block">
+        <span className="mb-1 block text-xs text-piedra">Nota para el cliente (opcional)</span>
+        <textarea rows={2} maxLength={500} value={nota} onChange={(e) => setNota(e.target.value)}
+          className="w-full resize-none rounded-lg border border-arena px-3 py-2 text-sm focus:outline-none focus:ring-2" />
+      </label>
+      {err && <p className="text-xs text-red-600">{err}</p>}
+      <button type="submit" disabled={enviando}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-medium text-white transition hover:bg-primary-dark disabled:opacity-50">
+        <Camera className="h-4 w-4" />
+        {enviando ? "Enviando…" : "Entregar con evidencia"}
+      </button>
+    </form>
+  );
+}
+
+// ── Cliente: aprobar la entrega ───────────────────────
+function BotonAprobar({ tareaId, onAprobado }) {
+  const [confirmar, setConfirmar] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [err, setErr] = useState("");
+
+  const aprobar = async () => {
+    setEnviando(true);
+    setErr("");
+    try {
+      await api.patch(`/tareas/${tareaId}/completar`);
+      onAprobado();
+    } catch (e) {
+      setErr(e.response?.data?.error || "No se pudo aprobar el trabajo.");
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2 rounded-xl border border-sky-200 bg-sky-50 p-4">
+      <p className="text-sm font-semibold text-sky-900">El especialista entregó el trabajo</p>
+      <p className="text-xs text-sky-800">
+        Revisa la evidencia. Si todo quedó bien, apruébalo; si no, usa "Reportar problema".
+      </p>
+      {!confirmar ? (
+        <button onClick={() => setConfirmar(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-medium text-white transition hover:bg-primary-dark">
+          <CheckCircle className="h-4 w-4" />
+          Aprobar trabajo
+        </button>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-tinta">¿Confirmas? Esto cierra la tarea.</p>
+          <div className="flex gap-2">
+            <button onClick={() => setConfirmar(false)} disabled={enviando}
+              className="flex-1 rounded-xl border border-arena bg-white py-2 text-sm font-medium text-stone-700 hover:bg-crema">
+              No
+            </button>
+            <button onClick={aprobar} disabled={enviando}
+              className="flex-1 rounded-xl bg-primary py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">
+              {enviando ? "Aprobando…" : "Sí, aprobar"}
+            </button>
+          </div>
+        </div>
+      )}
+      {err && <p className="text-xs text-red-600">{err}</p>}
+    </div>
+  );
+}
 
 // ── Componente principal ──────────────────────────────
 export default function DetalleTarea() {
@@ -124,6 +263,8 @@ export default function DetalleTarea() {
   const esCliente   = user?.role === "cliente";
   const esTrabajador = user?.role === "trabajador";
   const backLink = esCliente ? "/dashboard/cliente" : "/dashboard/trabajador";
+  const recargar = () =>
+    api.get(`/tareas/${id}`).then((r) => setTarea(r.data.data)).catch(() => {});
 
   if (loading) return (
     <div className="flex-1 bg-crema px-4 py-8">
@@ -145,6 +286,9 @@ export default function DetalleTarea() {
   );
 
   const est = estadoStyle[tarea.estado] || estadoStyle.pendiente;
+  const esAsignado = esTrabajador && tarea.trabajador?.id === user?.id;
+  const fechaCorta = (d) =>
+    new Date(d).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
   const tieneUbicacion = tarea.latitud && tarea.longitud;
 
   return (
@@ -245,6 +389,23 @@ export default function DetalleTarea() {
               </div>
             )}
 
+            {/* Evidencia del trabajo */}
+            {tarea.evidencias?.length > 0 && (
+              <div className="bg-white rounded-2xl border border-arena p-6">
+                <h2 className="font-display font-semibold text-tinta mb-1 flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-stone-400" />
+                  Evidencia del trabajo
+                </h2>
+                {tarea.entregado_at && (
+                  <p className="mb-4 text-xs text-piedra">
+                    Entregado el {fechaCorta(tarea.entregado_at)}
+                    {tarea.aprobado_at && ` · aprobado el ${fechaCorta(tarea.aprobado_at)}`}
+                  </p>
+                )}
+                <EvidenciaGaleria evidencias={tarea.evidencias} />
+              </div>
+            )}
+
             {/* Calificación */}
             {tarea.calificacion && (
               <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6">
@@ -335,6 +496,28 @@ export default function DetalleTarea() {
                 </Link>
               )}
 
+              {esAsignado && tarea.estado === "en_progreso" && (
+                <FormEntrega tareaId={tarea.id} onEntregado={recargar} />
+              )}
+
+              {esAsignado && tarea.estado === "entregado" && (
+                <p className="flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5 text-sm text-sky-800">
+                  <Hourglass className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  Entregaste el trabajo. Esperando la aprobación del cliente.
+                </p>
+              )}
+
+              {esCliente && tarea.estado === "entregado" && (
+                <BotonAprobar tareaId={tarea.id} onAprobado={recargar} />
+              )}
+
+              {esCliente && tarea.estado === "en_progreso" && (
+                <p className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+                  <Hourglass className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  Esperando que el especialista entregue el trabajo con fotos.
+                </p>
+              )}
+
               {esCliente && tarea.estado === "en_progreso" && (
                 <Link to={`/dashboard/cliente/tareas/${tarea.id}`}
                   className="flex items-center justify-center gap-2 w-full border border-arena text-stone-700 py-2.5 rounded-xl text-sm font-medium hover:bg-crema transition">
@@ -373,9 +556,10 @@ export default function DetalleTarea() {
                 {[
                   { key: "pendiente",   label: "Publicada",   icon: Clock },
                   { key: "en_progreso", label: "En progreso", icon: Clock },
-                  { key: "completada",  label: "Completada",  icon: CheckCircle },
+                  { key: "entregado",   label: "Entregado con evidencia", icon: Camera },
+                  { key: "completada",  label: "Aprobado por el cliente", icon: CheckCircle },
                 ].map(({ key, label, icon: Icon }) => {
-                  const estados = ["pendiente","en_progreso","completada"];
+                  const estados = ["pendiente","en_progreso","entregado","completada"];
                   const actual  = estados.indexOf(tarea.estado);
                   const este    = estados.indexOf(key);
                   const activo  = actual >= este;
