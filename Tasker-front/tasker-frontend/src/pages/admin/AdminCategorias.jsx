@@ -361,7 +361,7 @@ export default function AdminCategorias() {
         {/* Nota informativa */}
         {!loading && categorias.length > 0 && (
           <p className="text-xs text-stone-400 mt-3 text-center">
-            💡 Las categorías con tareas asociadas no pueden eliminarse, solo desactivarse.
+            Las categorías con tareas asociadas no pueden eliminarse, solo desactivarse.
           </p>
         )}
       </div>

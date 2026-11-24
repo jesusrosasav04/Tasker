@@ -1,6 +1,7 @@
 const db = require("../config/db");
 const bcrypt = require("bcryptjs");
 const { success, error } = require("../utils/response");
+const { normalizarTelefono, telefonoEnUso, mensajeDuplicado, MSG_TELEFONO } = require("../utils/identidad");
 
 // GET /api/usuarios/perfil — Ver mi perfil
 const getMiPerfil = async (req, res) => {
@@ -34,13 +35,20 @@ const actualizarPerfil = async (req, res) => {
   const usuario_id = req.user.id;
   const { nombre, telefono } = req.body;
 
+  // Teléfono: 10 dígitos y que no lo use otra cuenta
+  const tel = telefono ? normalizarTelefono(telefono) : null;
+  if (telefono && !tel) return error(res, MSG_TELEFONO, 400);
+
   try {
+    if (tel && (await telefonoEnUso(db, tel, usuario_id)))
+      return error(res, "Este teléfono ya está registrado en otra cuenta", 409);
+
     await db.query(
       `UPDATE usuarios SET
         nombre    = COALESCE(?, nombre),
         telefono  = COALESCE(?, telefono)
        WHERE id = ?`,
-      [nombre?.trim() || null, telefono?.trim() || null, usuario_id]
+      [nombre?.trim() || null, tel, usuario_id]
     );
 
     const [actualizado] = await db.query(
@@ -50,6 +58,8 @@ const actualizarPerfil = async (req, res) => {
 
     return success(res, actualizado[0], "Perfil actualizado correctamente");
   } catch (err) {
+    const dup = mensajeDuplicado(err);
+    if (dup) return error(res, dup, 409);
     console.error(err);
     return error(res, "Error al actualizar perfil", 500);
   }

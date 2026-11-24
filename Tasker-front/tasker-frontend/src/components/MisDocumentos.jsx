@@ -4,7 +4,7 @@ import api from "../api/axios";
 import { abrirDocumento, TIPOS_DOCUMENTO } from "../api/archivos";
 
 // Sección del trabajador: subir documentos para que un admin verifique su perfil
-export default function MisDocumentos() {
+export default function MisDocumentos({ onCambio }) {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tipo, setTipo] = useState("identificacion");
@@ -31,6 +31,7 @@ export default function MisDocumentos() {
     try {
       const r = await api.post("/documentos", fd);
       setDocs((prev) => [r.data.data, ...prev]);
+      onCambio?.();
       setOkMsg(r.data.message);
       setArchivo(null);
       setInputKey((k) => k + 1);
@@ -47,6 +48,7 @@ export default function MisDocumentos() {
     try {
       await api.delete(`/documentos/${doc.id}`);
       setDocs((prev) => prev.filter((d) => d.id !== doc.id));
+      onCambio?.();
     } catch (err) {
       setErrMsg(err.response?.data?.error || "Error al eliminar el documento.");
     }

@@ -9,6 +9,7 @@ const {
 const { verifyToken, verifyRole } = require("../middlewares/auth.middleware");
 const validate = require("../middlewares/validate.middleware");
 const { body, param } = require("express-validator");
+const { normalizarTelefono, normalizarCurp, curpValida, MSG_TELEFONO, MSG_CURP } = require("../utils/identidad");
 
 const perfilRules = [
   body("descripcion")
@@ -17,10 +18,13 @@ const perfilRules = [
     .isLength({ max: 1000 })
     .withMessage("Descripción demasiado larga"),
   body("telefono")
-    .optional()
-    .trim()
-    .matches(/^[0-9+\-\s()]{7,20}$/)
-    .withMessage("Teléfono inválido"),
+    .optional({ values: "falsy" })
+    .custom((v) => normalizarTelefono(v) !== null)
+    .withMessage(MSG_TELEFONO),
+  body("curp")
+    .optional({ values: "falsy" })
+    .custom((v) => curpValida(normalizarCurp(v)))
+    .withMessage(MSG_CURP),
 ];
 
 const idParamRule = [param("id").isInt({ min: 1 }).withMessage("ID inválido")];

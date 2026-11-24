@@ -3,10 +3,14 @@ const { getMiPerfil, actualizarPerfil, cambiarPassword } = require("../controlle
 const { verifyToken } = require("../middlewares/auth.middleware");
 const { body } = require("express-validator");
 const validate = require("../middlewares/validate.middleware");
+const { normalizarTelefono, MSG_TELEFONO } = require("../utils/identidad");
 
 const perfilRules = [
   body("nombre").optional().trim().isLength({ min: 2, max: 100 }).withMessage("Nombre entre 2 y 100 caracteres"),
-  body("telefono").optional().trim().isLength({ max: 20 }),
+  body("telefono")
+    .optional({ values: "falsy" })
+    .custom((v) => normalizarTelefono(v) !== null)
+    .withMessage(MSG_TELEFONO),
 ];
 
 const passwordRules = [

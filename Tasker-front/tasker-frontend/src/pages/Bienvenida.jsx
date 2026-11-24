@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Wrench, Home as HomeIcon, Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
@@ -28,6 +28,9 @@ export default function Bienvenida() {
   const [seleccion, setSeleccion] = useState([]);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+  // Quien se registró con correo ya aceptó el aviso; quien entró con Google, no
+  const debeAceptar = !user?.privacidad_aceptada;
+  const [acepta, setAcepta] = useState(false);
 
   const esEsp = rol === "trabajador";
   const escenas = rol === "cliente" ? CLIENTE : OFICIOS;
@@ -61,11 +64,14 @@ export default function Bienvenida() {
     try {
       setGuardando(true);
       await completarPerfil(
-        rol === "trabajador" ? { role: "trabajador", categorias: seleccion } : { role: "cliente" },
+        {
+          ...(rol === "trabajador" ? { role: "trabajador", categorias: seleccion } : { role: "cliente" }),
+          ...(acepta ? { acepta_privacidad: true } : {}),
+        },
       );
       irAlPanel(rol);
     } catch (e) {
-      setError(e?.response?.data?.message || "No se pudo guardar. Intenta de nuevo.");
+      setError(e?.response?.data?.error || "No se pudo guardar. Intenta de nuevo.");
       setGuardando(false);
     }
   };
@@ -122,11 +128,24 @@ export default function Bienvenida() {
               />
             </div>
 
+            {debeAceptar && (
+              <label className="mt-6 flex items-start gap-2.5 text-sm text-piedra">
+                <input type="checkbox" checked={acepta} onChange={(e) => setAcepta(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 flex-shrink-0 accent-primary" />
+                <span>
+                  He leído y acepto el{" "}
+                  <Link to="/privacidad" target="_blank" className="font-medium text-primary hover:underline">
+                    aviso de privacidad
+                  </Link>.
+                </span>
+              </label>
+            )}
+
             {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
             <button
               onClick={continuar}
-              disabled={!rol || guardando}
+              disabled={!rol || guardando || (debeAceptar && !acepta)}
               className="mt-7 min-h-[54px] rounded-2xl bg-tinta text-base font-semibold text-crema transition enabled:hover:bg-stone-700 disabled:opacity-40"
             >
               {guardando ? "Guardando..." : "Continuar"}

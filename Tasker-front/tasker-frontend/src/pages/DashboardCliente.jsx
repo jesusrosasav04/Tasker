@@ -115,13 +115,14 @@ function ModalCompletar({ tarea, onClose, onConfirmar }) {
           <CheckCircle className="h-7 w-7 text-primary" />
         </div>
         <h3 className="font-display font-bold text-tinta text-center text-lg mb-2">
-          ¿Marcar como completada?
+          ¿Aprobar el trabajo?
         </h3>
         <p className="text-sm text-piedra text-center mb-2">
-          Vas a marcar la tarea <span className="font-medium text-tinta">"{tarea.titulo}"</span> como completada.
+          Vas a aprobar el trabajo entregado de <span className="font-medium text-tinta">"{tarea.titulo}"</span>.
         </p>
-        <p className="text-xs text-amber-600 text-center bg-amber-50 rounded-lg px-3 py-2 mb-5">
-          ⚠️ Esta acción no se puede deshacer. Asegúrate de que el trabajo fue realizado correctamente.
+        <p className="text-xs leading-relaxed text-amber-700 text-center bg-amber-50 rounded-lg px-3 py-2 mb-5">
+          Revisa primero la foto que subió el especialista. Al aprobar confirmas que el trabajo se
+          hizo, y esta acción no se puede deshacer.
         </p>
         <div className="flex gap-3">
           <button onClick={onClose}
@@ -130,7 +131,7 @@ function ModalCompletar({ tarea, onClose, onConfirmar }) {
           </button>
           <button onClick={handleConfirmar} disabled={loading}
             className="bg-primary hover:bg-primary-dark flex-1 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50">
-            {loading ? "Procesando..." : "Sí, completar"}
+            {loading ? "Procesando..." : "Sí, aprobar"}
           </button>
         </div>
       </div>
@@ -280,7 +281,7 @@ export default function DashboardCliente() {
 
   const stats = [
     { label: "Tareas publicadas", value: tareas.length,                                          icon: ClipboardList, color: "bg-stone-100 text-tinta"   },
-    { label: "En progreso",       value: tareas.filter((t) => t.estado === "en_progreso").length, icon: Clock,         color: "bg-amber-50 text-amber-600" },
+    { label: "En progreso",       value: tareas.filter((t) => ["en_progreso", "entregado"].includes(t.estado)).length, icon: Clock, color: "bg-amber-50 text-amber-600" },
     { label: "Completadas",       value: tareas.filter((t) => t.estado === "completada").length,  icon: CheckCircle,   color: "bg-menta text-primary"  },
     { label: "Pendientes",        value: tareas.filter((t) => t.estado === "pendiente").length,   icon: Users,         color: "bg-miel text-miel-dark"},
   ];
@@ -288,6 +289,7 @@ export default function DashboardCliente() {
   const estadoColor = {
     pendiente:   "bg-stone-100 text-piedra",
     en_progreso: "bg-amber-100 text-amber-700",
+    entregado:   "bg-sky-100 text-sky-800",
     completada:  "bg-menta text-primary",
     cancelada:   "bg-red-100 text-red-600",
     disputa:     "bg-red-50 text-red-700",
@@ -296,6 +298,7 @@ export default function DashboardCliente() {
   const estadoLabel = {
     pendiente:   "Pendiente",
     en_progreso: "En progreso",
+    entregado:   "Por aprobar",
     completada:  "Completada",
     cancelada:   "Cancelada",
     disputa:     "En disputa",
@@ -334,7 +337,7 @@ export default function DashboardCliente() {
         {/* Header */}
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="font-display text-2xl font-bold text-tinta">Hola, {user?.nombre} 👋</h1>
+            <h1 className="font-display text-3xl font-extrabold tracking-tight text-tinta">Hola, {user?.nombre?.split(" ")[0] || "cliente"}</h1>
             <p className="text-piedra mt-1">Gestiona tus tareas</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -390,6 +393,7 @@ export default function DashboardCliente() {
                 { key: "todas",      label: "Todas",       count: tareas.length },
                 { key: "pendiente",  label: "Pendientes",  count: tareas.filter(t => t.estado === "pendiente").length },
                 { key: "en_progreso",label: "En progreso", count: tareas.filter(t => t.estado === "en_progreso").length },
+                { key: "entregado",  label: "Por aprobar", count: tareas.filter(t => t.estado === "entregado").length },
                 { key: "completada", label: "Completadas", count: tareas.filter(t => t.estado === "completada").length },
                 { key: "cancelada",  label: "Canceladas",  count: tareas.filter(t => t.estado === "cancelada").length },
                 { key: "disputa",    label: "En disputa",  count: tareas.filter(t => t.estado === "disputa").length },
@@ -455,8 +459,8 @@ export default function DashboardCliente() {
                           Editar
                         </Link>
                       )}
-                      {/* Botón ayuda — solo tareas en_progreso */}
-                      {t.estado === "en_progreso" && (
+                      {/* Botón ayuda — tareas en curso */}
+                      {["en_progreso", "entregado"].includes(t.estado) && (
                         <button
                           onClick={() => setModalAyuda(t)}
                           className="flex items-center gap-1.5 text-xs font-medium text-piedra border border-arena px-3 py-1.5 rounded-lg hover:bg-stone-100 transition"
@@ -465,15 +469,21 @@ export default function DashboardCliente() {
                           Ayuda
                         </button>
                       )}
-                      {/* Botón completar — SOLO tareas en_progreso */}
+                      {/* Entrega con evidencia: el cliente revisa las fotos en el detalle antes de aprobar */}
                       {t.estado === "en_progreso" && (
-                        <button
-                          onClick={() => setModalCompletar(t)}
-                          className="flex items-center gap-1.5 text-xs font-medium text-primary border border-menta bg-menta px-3 py-1.5 rounded-lg hover:bg-menta transition"
+                        <span className="flex items-center gap-1 text-xs text-amber-700">
+                          <Clock className="h-3.5 w-3.5" />
+                          Esperando entrega
+                        </span>
+                      )}
+                      {t.estado === "entregado" && (
+                        <Link
+                          to={`/tareas/${t.id}`}
+                          className="flex items-center gap-1.5 text-xs font-medium text-sky-800 border border-sky-200 bg-sky-50 px-3 py-1.5 rounded-lg hover:bg-sky-100 transition"
                         >
                           <CheckCircle className="h-3.5 w-3.5" />
-                          Completar
-                        </button>
+                          Revisar y aprobar
+                        </Link>
                       )}
                       {/* Botón calificar — solo tareas completadas sin calificar */}
                       {t.estado === "completada" && !yaCalificada && (
@@ -508,7 +518,7 @@ export default function DashboardCliente() {
                         </span>
                       )}
                       {/* Chat — tareas en_progreso o completadas */}
-                      {["en_progreso", "completada"].includes(t.estado) && (
+                      {["en_progreso", "entregado", "completada"].includes(t.estado) && (
                         <Link
                           to={`/chat/${t.id}`}
                           className="flex items-center gap-1.5 text-xs font-medium text-piedra border border-arena px-3 py-1.5 rounded-lg hover:bg-stone-100 transition"
@@ -518,9 +528,9 @@ export default function DashboardCliente() {
                         </Link>
                       )}
                       <Link
-                        to={["en_progreso","completada"].includes(t.estado) ? `/tareas/${t.id}` : `/dashboard/cliente/tareas/${t.id}`}
+                        to={["en_progreso","entregado","completada"].includes(t.estado) ? `/tareas/${t.id}` : `/dashboard/cliente/tareas/${t.id}`}
                         className="bg-primary hover:bg-primary-dark text-xs font-medium text-white px-3 py-1.5 rounded-lg transition">
-                        {["en_progreso","completada"].includes(t.estado) ? "Ver detalle" : "Postulaciones"}
+                        {["en_progreso","entregado","completada"].includes(t.estado) ? "Ver detalle" : "Postulaciones"}
                       </Link>
                     </div>
                   </div>

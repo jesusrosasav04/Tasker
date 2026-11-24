@@ -23,6 +23,9 @@ Si prefieres aplicarlas una por una a mano:
 Get-Content scripts\01_password_resets.sql | docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker
 Get-Content scripts\02_reportes_soporte.sql | docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker
 Get-Content scripts\03_onboarding_google.sql | docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker
+Get-Content scripts\04_creditos.sql | docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker
+Get-Content scripts\05_evidencias.sql | docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker
+Get-Content scripts\06_identidad.sql | docker exec -i tasker-mysql mysql -uroot -ptasker123 tasker
 ```
 
 ## Opción B — Empezar de cero (borra todos los datos)

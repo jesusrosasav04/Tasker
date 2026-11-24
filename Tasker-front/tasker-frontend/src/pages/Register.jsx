@@ -16,6 +16,7 @@ export default function Register() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [form, setForm] = useState({ nombre: "", email: "", password: "" });
+  const [acepta, setAcepta] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -29,6 +30,7 @@ export default function Register() {
         nombre:   form.nombre.trim(),
         email:    form.email.trim(),
         password: form.password,
+        acepta_privacidad: acepta,
       });
       navigate("/bienvenida");
     } catch (err) {
@@ -116,13 +118,24 @@ export default function Register() {
                 </div>
               </div>
 
+              <label className="flex items-start gap-2.5 text-sm text-piedra">
+                <input type="checkbox" checked={acepta} onChange={(e) => setAcepta(e.target.checked)} required
+                  className="mt-0.5 h-4 w-4 flex-shrink-0 accent-primary" />
+                <span>
+                  He leído y acepto el{" "}
+                  <Link to="/privacidad" target="_blank" className="font-medium text-primary hover:underline">
+                    aviso de privacidad
+                  </Link>.
+                </span>
+              </label>
+
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
                   {error}
                 </div>
               )}
 
-              <button type="submit" disabled={loading}
+              <button type="submit" disabled={loading || !acepta}
                 className="bg-primary hover:bg-primary-dark w-full text-white py-3 rounded-xl font-medium transition disabled:opacity-50 text-sm">
                 {loading ? "Creando cuenta..." : "Crear cuenta"}
               </button>

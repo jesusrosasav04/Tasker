@@ -1,6 +1,10 @@
 const db = require("../config/db");
 const { success, error } = require("../utils/response");
 const { decrypt } = require("../config/encryption");
+const {
+  normalizarTelefono, normalizarCurp, curpValida, telefonoEnUso, mensajeDuplicado,
+  MSG_TELEFONO, MSG_CURP,
+} = require("../utils/identidad");
 
 // GET /api/trabajadores
 const getAll = async (req, res) => {
@@ -99,17 +103,36 @@ const getById = async (req, res) => {
 // PUT /api/trabajadores/perfil 🔒 (solo trabajador)
 const actualizarPerfil = async (req, res) => {
   const usuario_id = req.user.id;
-  const { descripcion, telefono, categorias } = req.body;
+  const { descripcion, telefono, curp, categorias } = req.body;
 
   try {
-    const [trab] = await db.query("SELECT id FROM trabajador WHERE usuario_id = ?", [usuario_id]);
+    const [trab] = await db.query("SELECT id, curp, verificado FROM trabajador WHERE usuario_id = ?", [usuario_id]);
     if (trab.length === 0) return error(res, "Perfil de trabajador no encontrado", 404);
     const trabajador_id = trab[0].id;
 
-    await db.query("UPDATE trabajador SET descripcion = ? WHERE usuario_id = ?", [descripcion || null, usuario_id]);
+    // Teléfono: 10 dígitos y que no lo use otra cuenta
+    const tel = telefono ? normalizarTelefono(telefono) : null;
+    if (telefono && !tel) return error(res, MSG_TELEFONO, 400);
+    if (tel && (await telefonoEnUso(db, tel, usuario_id)))
+      return error(res, "Este teléfono ya está registrado en otra cuenta", 409);
 
-    if (telefono) {
-      await db.query("UPDATE usuarios SET telefono = ? WHERE id = ?", [telefono, usuario_id]);
+    // CURP: formato + dígito verificador, única, y fija una vez verificado el perfil
+    const curpNueva = curp ? normalizarCurp(curp) : null;
+    if (curpNueva) {
+      if (!curpValida(curpNueva)) return error(res, MSG_CURP, 400);
+      if (trab[0].verificado && trab[0].curp && trab[0].curp !== curpNueva)
+        return error(res, "Tu CURP ya fue verificada. Para cambiarla, contacta a soporte.", 409);
+      const [dup] = await db.query("SELECT id FROM trabajador WHERE curp = ? AND id <> ?", [curpNueva, trabajador_id]);
+      if (dup.length > 0) return error(res, "Esta CURP ya está registrada en otra cuenta", 409);
+    }
+
+    await db.query(
+      "UPDATE trabajador SET descripcion = ?, curp = COALESCE(?, curp) WHERE id = ?",
+      [descripcion || null, curpNueva, trabajador_id],
+    );
+
+    if (tel) {
+      await db.query("UPDATE usuarios SET telefono = ? WHERE id = ?", [tel, usuario_id]);
     }
 
     // Actualizar categorías si se enviaron
@@ -123,6 +146,8 @@ const actualizarPerfil = async (req, res) => {
 
     return success(res, null, "Perfil actualizado correctamente", 200);
   } catch (err) {
+    const dup = mensajeDuplicado(err);
+    if (dup) return error(res, dup, 409);
     console.error(err);
     return error(res, "Error al actualizar perfil", 500);
   }

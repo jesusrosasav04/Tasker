@@ -2,8 +2,9 @@ const router = require("express").Router();
 const {
   crearTarea, misTareas, tareasDisponibles,
   completarTarea, getTareaById, actualizarTarea,
-  cancelarTarea,
+  cancelarTarea, entregarTarea, getEvidenciaArchivo,
 } = require("../controllers/tarea.controller");
+const { subirArchivo } = require("../middlewares/upload.middleware");
 const { verifyToken, verifyRole } = require("../middlewares/auth.middleware");
 const validate = require("../middlewares/validate.middleware");
 const { body, param } = require("express-validator");
@@ -50,6 +51,16 @@ router.patch("/:id/cancelar", verifyToken, verifyRole("cliente"),
   param("id").isInt({ min: 1 }), validate, cancelarTarea);
 router.put("/:id", verifyToken, verifyRole("cliente"),
   param("id").isInt({ min: 1 }), validate, actualizarTarea);
+// Entrega con evidencia (multipart: campo "foto" + "nota" opcional)
+router.post("/:id/entregar", verifyToken, verifyRole("trabajador"),
+  subirArchivo("evidencias", "foto", ["image/jpeg", "image/png", "image/webp"]),
+  [
+    param("id").isInt({ min: 1 }),
+    body("nota").optional().trim().isLength({ max: 500 }).withMessage("La nota no puede pasar de 500 caracteres"),
+  ],
+  validate, entregarTarea);
+router.get("/evidencias/:evid/archivo", verifyToken,
+  param("evid").isInt({ min: 1 }), validate, getEvidenciaArchivo);
 router.get("/:id", verifyToken,
   param("id").isInt({ min: 1 }), validate, getTareaById);
 
